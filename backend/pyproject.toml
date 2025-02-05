@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "tic tac toe"
+version = "0.1.0"
+description = "Tic Tac Toe Backend"
+authors = ["Dilip Sharma"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "~=3.13"
+
+
+[tool.poetry.group.core.dependencies]
+fastapi = "^0.115.8"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
