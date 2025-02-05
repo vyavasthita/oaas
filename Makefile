@@ -1,3 +1,5 @@
+COMPOSE_FILE=docker-compose.yaml
+
 all: stop down clean up
 
 stop:
@@ -10,10 +12,15 @@ clean:
 	docker network prune -f
 
 up:
-	docker compose up -d --build --remove-orphans
+	docker compose -f $(COMPOSE_FILE) up -d --build --remove-orphans
 
 down:
 	docker compose down
 
+.PHONY: ps
 ps:
 	docker compose ps -a
+
+.PHONY: logs
+logs: ## show logs of containers
+	docker compose -f $(COMPOSE_FILE) logs
