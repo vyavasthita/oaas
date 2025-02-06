@@ -1,4 +1,75 @@
 services:
+  mysql-db:
+    image: mysql:8.0.29
+    container_name: mysql-db
+    ports:
+      - "3308:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      timeout: 3s
+      retries: 5
+    volumes:
+      - ./data/db:/var/lib/mysql
+    networks:
+      - tic-tac-toe-network
+  
+  db-admin:
+    image: phpmyadmin:latest
+    container_name: mysql-db-admin
+    restart: always
+    environment:
+      PMA_HOST: mysql-db
+      PMA_USER: root
+      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "8080:80"
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - tic-tac-toe-network
+
+  db-migration:
+    image: TBD
+    container_name: db-migration
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    environment:
+      MYSQL_USERNAME: root
+      MYSQL_PASSWORD: temp123
+      MYSQL_HOST: mysql-db
+      CHANGELOG_FILE: /liquibase/changelog/test_data/sql/local_dev_changelog.yml
+      LIQUIBASE_COMMAND_URL: jdbc:mysql://mysql-db:3306/tictactoe?allowPublicKeyRetrieval=true&useSSL=true&createDatabaseIfNotExist=true
+      OPERATION: update
+      MYSQL_DATABASE: tictactoe
+      LIQUIBASE_LOG_LEVEL: DEBUG
+    volumes: 
+      - ../backend/changelog:/liquibase/changelog
+    networks:
+      - tic-tac-toe-network
+
+  mysql-workbench:
+    image: lspipepr/mysql-workbench:version-8.0.28
+    container_name: mysql-workbench
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+    ports:
+      - 3000:3000
+      - 3001:3001
+    cap_add:
+      - IPC_LOCK
+    restart: unless-stopped
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - tic-tac-toe-network
+
   backend:
     build:
       context: .
@@ -6,12 +77,15 @@ services:
     ports:
       - "5000:5000"
     container_name: backend
-    # command: uvicorn src.api:app --host 0.0.0.0 --port 5000
+    depends_on:
+      mysql-db:
+        condition: service_healthy
     healthcheck:
       test: curl --fail http://localhost:5000/health || exit 1
       start_period: 10s
       interval: 10s
     networks:
       - tic-tac-toe-network
+
 networks:
   tic-tac-toe-network: {}
