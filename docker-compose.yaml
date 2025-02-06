@@ -1,11 +1,11 @@
 services:
-  mysql-db:
+  database:
     image: mysql:8.0.29
-    container_name: mysql-db
+    container_name: database
     ports:
       - "3308:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=root
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       timeout: 3s
@@ -15,41 +15,60 @@ services:
     networks:
       - tic-tac-toe-network
   
+  # database:
+  #   image: TBD
+  #   restart: unless-stopped
+  #   container_name: ttt-xtradb
+  #   ports:
+  #     - "3312:3306"
+  #   volumes:
+  #      - ./sql:/var/lib/sql/
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: temp123
+  #     EXTUSER: "ttt:some_password"
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "mysql -uroot -ptemp123 -e 'select 1'"]
+  #     start_period: 5s
+  #     interval: 5s
+  #     retries: 30
+  #   networks:
+  #     - tic-tac-toe-network
+
   db-admin:
     image: phpmyadmin:latest
-    container_name: mysql-db-admin
+    container_name: database-admin
     restart: always
     environment:
-      PMA_HOST: mysql-db
+      PMA_HOST: database
       PMA_USER: root
       PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     ports:
       - "8080:80"
     depends_on:
-      mysql-db:
+      database:
         condition: service_healthy
     networks:
       - tic-tac-toe-network
 
-  db-migration:
-    image: TBD
-    container_name: db-migration
-    depends_on:
-      mysql-db:
-        condition: service_healthy
-    environment:
-      MYSQL_USERNAME: root
-      MYSQL_PASSWORD: temp123
-      MYSQL_HOST: mysql-db
-      CHANGELOG_FILE: /liquibase/changelog/test_data/sql/local_dev_changelog.yml
-      LIQUIBASE_COMMAND_URL: jdbc:mysql://mysql-db:3306/tictactoe?allowPublicKeyRetrieval=true&useSSL=true&createDatabaseIfNotExist=true
-      OPERATION: update
-      MYSQL_DATABASE: tictactoe
-      LIQUIBASE_LOG_LEVEL: DEBUG
-    volumes: 
-      - ../backend/changelog:/liquibase/changelog
-    networks:
-      - tic-tac-toe-network
+  # db-migration:
+  #   image: TBD
+  #   container_name: db-migration
+  #   depends_on:
+  #     database:
+  #       condition: service_healthy
+  #   environment:
+  #     MYSQL_USERNAME: root
+  #     MYSQL_PASSWORD: temp123
+  #     MYSQL_HOST: database
+  #     CHANGELOG_FILE: /liquibase/changelog/test_data/sql/local_dev_changelog.yml
+  #     LIQUIBASE_COMMAND_URL: jdbc:mysql://databaseb:3306/tictactoe?allowPublicKeyRetrieval=true&useSSL=true&createDatabaseIfNotExist=true
+  #     OPERATION: update
+  #     MYSQL_DATABASE: tictactoe
+  #     LIQUIBASE_LOG_LEVEL: DEBUG
+  #   volumes: 
+  #     - ../backend/changelog:/liquibase/changelog
+  #   networks:
+  #     - tic-tac-toe-network
 
   mysql-workbench:
     image: lspipepr/mysql-workbench:version-8.0.28
@@ -65,7 +84,7 @@ services:
       - IPC_LOCK
     restart: unless-stopped
     depends_on:
-      mysql-db:
+      database:
         condition: service_healthy
     networks:
       - tic-tac-toe-network
@@ -78,7 +97,7 @@ services:
       - "5000:5000"
     container_name: backend
     depends_on:
-      mysql-db:
+      database:
         condition: service_healthy
     healthcheck:
       test: curl --fail http://localhost:5000/health || exit 1
@@ -86,6 +105,60 @@ services:
       interval: 10s
     networks:
       - tic-tac-toe-network
+
+# Liquibase:
+#     # Image to be pulled from Docker Hub
+#     image: liquibase/liquibase:4.9.1
+#     # Name of the container
+#     container_name: Liquibase_container
+#     # Setting depends_on to PostgreSQL container to wait till the service is ready to accept connections
+#     depends_on:
+#       PostgreSQL:
+#         condition: service_healthy
+#     # Volume to add the liquibase collection of scripts
+#     volumes:
+#       - ./database/sql/liquibase/changeLog/:/liquibase/changelog/
+#     # Command to run the liquibase update service
+#     command: --defaults-file=/liquibase/changelog/liquibase.properties update
+
+# liquibase:
+#     container_name: liquibase
+#     build: 
+#         context: ./liquibase
+#         dockerfile: Dockerfile
+#     environment: 
+#         - LIQUIBASE_PROJECT_DIR=${LIQUIBASE_PROJECT_DIR}
+#         - LIQUIBASE_DATABASE_DRIVER=${LIQUIBASE_DATABASE_DRIVER}
+#         - LIQUIBASE_DATABASE_URL=jdbc:mysql://${LIQUIBASE_DATABASE_HOST}:3306/${MYSQL_DATABASE}
+#         - LIQUIBASE_DATABASE_USERNAME=${MYSQL_USER}
+#         - LIQUIBASE_DATABASE_PASSWORD=${MYSQL_PASSWORD}
+#     depends_on:
+#         - mysql
+#     links: 
+#         - mysql
+#     networks:
+#         - code-network
+
+# mysql:
+#     container_name: mysql
+#     user: "1000:50"
+#     restart: always
+#     build:
+#         context: ./mysql
+#         dockerfile: Dockerfile
+#     command: "--innodb-use-native-aio=0 --innodb-fast-shutdown=0"
+#     ports:
+#         - "${MYSQL_PORT}:3306"
+#     volumes:
+#         - ${MYSQL_DATA}:/var/lib/mysql
+#         - ./mysql/run.sh:/stack/localdb/run.sh:rw
+#     environment:
+#         - MYSQL_DATABASE=${MYSQL_DATABASE}
+#         - MYSQL_USER=${MYSQL_USER}
+#         - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+#         - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+#     networks:
+#         - code-network
 
 networks:
   tic-tac-toe-network: {}
