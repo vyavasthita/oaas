@@ -78,7 +78,7 @@ services:
       - PGID=1000
       - TZ=Etc/UTC
     ports:
-      - 3000:3000
+      # - 3000:3000
       - 3001:3001
     cap_add:
       - IPC_LOCK
@@ -159,6 +159,32 @@ services:
 #         - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
 #     networks:
 #         - code-network
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - "./prometheus.yml:/etc/prometheus/prometheus.yml"
+    ports:
+      - 9090:9090
+    networks:
+      - tic-tac-toe-network  
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - tic-tac-toe-network
+
+volumes:
+  grafana-storage: {}
 
 networks:
   tic-tac-toe-network: {}

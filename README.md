@@ -81,11 +81,6 @@ TBD
 <!-- Installation -->
 ## :gear: Installation
 
-0. Set MySql password
-   ```sh
-   export MYSQL_ROOT_PASSWORD=<mysql_password_of_your_choice>
-   ```
-
 1. Clone the repo
    ```sh
    git clone https://github.com/vyavasthita/tic-tac-toe.git
@@ -142,14 +137,32 @@ Phpmyadmin gets connected automatically with MySql DB
 ```
 
 ##### Create Connection in MySql Workbench
-hostname: mysql-db
+hostname: database
 port: 3306
 username: root
+password: root
 
 ##### :pencil: There is no password is used for MySql (Empty Password).
 
 ### :pencil:
 - Both MySql workbench and phpmyadmin can be used as GUI for Mysql.
+
+# Observability
+Ref: https://github.com/iam-veeramalla/observability-zero-to-hero/
+
+##### Prometheus
+```sh
+   http://localhost:9090/
+```
+##### Grafana
+```sh
+   http://localhost:3000/
+```
+Grafana UI: username is admin
+Grafana UI: password is prom-operator
+
+Add Prometheus connection:
+Use URL: http://monitoring-kube-prometheus-prometheus.monitoring:9090
 
 <p align="right">(<a href="#readme-top">Back To Top</a>)</p>
 
