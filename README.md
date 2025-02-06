@@ -162,6 +162,11 @@ Grafana UI: username is admin
 Grafana UI: password is prom-operator
 
 Add Prometheus connection:
+Use URL: http://prometheus:9090
+
+# Using Helm
+
+Add Prometheus connection:
 Use URL: http://monitoring-kube-prometheus-prometheus.monitoring:9090
 
 <p align="right">(<a href="#readme-top">Back To Top</a>)</p>
@@ -216,6 +221,9 @@ It has some limitations;-
 TBD
 
 <p align="right">(<a href="#readme-top">Back To Top</a>)</p>
+
+Ref:
+https://dev.to/ken_mwaura1/getting-started-monitoring-a-fastapi-app-with-grafana-and-prometheus-a-step-by-step-guide-3fbn
 
 
 <!-- MARKDOWN LINKS & IMAGES -->

@@ -11,7 +11,7 @@ services:
       timeout: 3s
       retries: 5
     volumes:
-      - ./data/db:/var/lib/mysql
+      - database_data:/var/lib/mysql
     networks:
       - tic-tac-toe-network
   
@@ -162,10 +162,12 @@ services:
 
   prometheus:
     image: prom/prometheus
-    volumes:
-      - "./prometheus.yml:/etc/prometheus/prometheus.yml"
     ports:
       - 9090:9090
+    volumes:
+      - ./data/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
     networks:
       - tic-tac-toe-network  
 
@@ -179,12 +181,29 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
-      - grafana-storage:/var/lib/grafana
+      - grafana_data:/var/lib/grafana
     networks:
       - tic-tac-toe-network
 
 volumes:
-  grafana-storage: {}
+  database_data:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ./data/database/mysql
+  # prometheus_data:
+  #   driver: local
+  #   driver_opts:
+  #     o: bind
+  #     type: none
+  #     device: ./data/prometheus
+  grafana_data:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ./data/grafana
 
 networks:
   tic-tac-toe-network: {}
