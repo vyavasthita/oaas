@@ -166,6 +166,31 @@ Use URL: http://prometheus:9090
 
 # Using Helm
 
+## Observability
+Ref: https://github.com/iam-veeramalla/observability-zero-to-hero/
+
+### Setup
+1. Start Minikube
+   ```sh
+      minikube start --memory=4098
+   ```
+2. Run
+   ```sh
+      make helm
+   ```
+
+## Prometheus
+```sh
+   http://localhost:9090/
+```
+
+## Grafana
+```sh
+   http://localhost:8080/
+```
+Grafana UI: username is admin
+Grafana UI: password is prom-operator
+
 Add Prometheus connection:
 Use URL: http://monitoring-kube-prometheus-prometheus.monitoring:9090
 

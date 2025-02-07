@@ -10,7 +10,11 @@ clean:
 	docker container prune -f
 	docker image prune -f
 	docker network prune -f
+	docker volume rm tic-tac-toe_database_data
+	docker volume rm tic-tac-toe_grafana_data
 	docker volume prune -f
+
+	rm -rf /data/database/mysql/*
 
 up:
 	docker compose -f $(COMPOSE_FILE) up -d --build --remove-orphans
@@ -25,3 +29,10 @@ ps:
 .PHONY: logs
 logs: ## show logs of containers
 	docker compose -f $(COMPOSE_FILE) logs
+
+.PHONY: helm
+helm:
+	bash helm/monitoring/scripts/setup.sh
+
+helm-cl:
+	bash helm/monitoring/scripts/clean.sh
