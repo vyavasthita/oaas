@@ -5,7 +5,7 @@ services:
     ports:
       - "3308:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       timeout: 3s
@@ -34,7 +34,7 @@ services:
   #   networks:
   #     - tic-tac-toe-network
 
-  db-admin:
+  phpmyadmin:
     image: phpmyadmin:latest
     container_name: database-admin
     restart: always
@@ -43,7 +43,7 @@ services:
       PMA_USER: root
       PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     ports:
-      - "8080:80"
+      - "8081:80"
     depends_on:
       database:
         condition: service_healthy
@@ -78,7 +78,7 @@ services:
       - PGID=1000
       - TZ=Etc/UTC
     ports:
-      # - 3000:3000
+      - 3000:3000
       - 3001:3001
     cap_add:
       - IPC_LOCK
@@ -175,7 +175,7 @@ services:
     image: grafana/grafana
     container_name: grafana
     ports:
-      - 3000:3000
+      - 8080:3000
     restart: unless-stopped
     environment:
       - GF_SECURITY_ADMIN_USER=admin

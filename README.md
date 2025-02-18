@@ -126,7 +126,7 @@ Phpmyadmin gets connected automatically with MySql DB
 
 ##### Phpmyadmin
 ```bash
-  http://0.0.0.0:8080/
+  http://0.0.0.0:8081/
 ```
 
 Phpmyadmin gets connected automatically with MySql DB
