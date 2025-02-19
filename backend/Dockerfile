@@ -10,11 +10,13 @@ COPY backend/pyproject.toml /tmp
 COPY backend/poetry.lock /tmp
 
 # Export poetry packages to requirements.txt, to be installed
-# RUN poetry export --without-hashes -f requirements.txt -o requirements.txt
-
-RUN poetry export -f requirements.txt --only core --output requirements.txt --without-hashes
+RUN poetry export --without-hashes -f requirements.txt --output requirements.txt
 
 FROM python:3.13.1-alpine3.21
+
+RUN apk update && apk add --virtual build-base g++
+
+RUN pip3 install --upgrade pip
 
 # # set environment variables
 # # Prevents Python from writing pyc files to disc (equivalent to python -B option)
