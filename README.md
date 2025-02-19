@@ -156,10 +156,10 @@ Ref: https://github.com/iam-veeramalla/observability-zero-to-hero/
 ```
 ##### Grafana
 ```sh
-   http://localhost:3000/
+   http://localhost:8080/
 ```
 Grafana UI: username is admin
-Grafana UI: password is prom-operator
+Grafana UI: password is admin
 
 Add Prometheus connection:
 Use URL: http://prometheus:9090
@@ -168,6 +168,9 @@ Use URL: http://prometheus:9090
 
 ## Observability
 Ref: https://github.com/iam-veeramalla/observability-zero-to-hero/
+     https://www.cncf.io/blog/2022/04/22/opentelemetry-and-python-a-complete-instrumentation-guide/
+     https://last9.io/blog/integrating-opentelemetry-with-fastapi/
+
 
 ### Setup
 1. Start Minikube

@@ -36,7 +36,7 @@ services:
 
   phpmyadmin:
     image: phpmyadmin:latest
-    container_name: database-admin
+    container_name: phpmyadmin-admin
     restart: always
     environment:
       PMA_HOST: database
@@ -96,6 +96,14 @@ services:
     ports:
       - "5000:5000"
     container_name: backend
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://grafana:4317
+      OTEL_SERVICE_NAME: backend-app
+      OTEL_EXPORTER_OTLP_TIMEOUT: 5
+      OTEL_EXPORTER_OTLP_METRICS_INSECURE: true
+      OTEL_EXPORTER_OTLP_TRACES_INSECURE: true
+      OTEL_EXPORTER_PROMETHEUS_PORT: 9090
+      OTEL_METRICS_EXPORTER: prometheus
     depends_on:
       database:
         condition: service_healthy
@@ -162,6 +170,7 @@ services:
 
   prometheus:
     image: prom/prometheus
+    container_name: prometheus
     ports:
       - 9090:9090
     volumes:
@@ -172,10 +181,13 @@ services:
       - tic-tac-toe-network  
 
   grafana:
-    image: grafana/grafana
+    # image: grafana/grafana
+    image: grafana/otel-lgtm
     container_name: grafana
     ports:
       - 8080:3000
+      - 4317:4317
+      - 4318:4318
     restart: unless-stopped
     environment:
       - GF_SECURITY_ADMIN_USER=admin
