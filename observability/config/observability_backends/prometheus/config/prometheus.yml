@@ -1,4 +1,5 @@
 # config file for prometheus
+# Moved from data/prometheus/prometheus.yml
 
 # global config
 global:

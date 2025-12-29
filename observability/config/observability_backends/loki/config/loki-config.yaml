@@ -1,3 +1,6 @@
+# Moved from data/loki/config/loki-config.yaml
+# See implementation-observability.md for directory rationale
+
 # -----------------------------
 # Loki Configuration Explained
 # -----------------------------

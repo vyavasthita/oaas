@@ -169,7 +169,7 @@ services:
       - "3100:3100"  # Expose Loki's HTTP API
     command: -config.file=/etc/loki/local-config.yaml
     volumes:
-      - ./data/loki/config/loki-config.yaml:/etc/loki/local-config.yaml  # Mount custom config if needed
+      - ./observability/config/observability_backends/loki/config/loki-config.yaml:/etc/loki/local-config.yaml  # Mount config from new location
       - ./data/loki/wal:/wal  # Loki WAL directory must be writable
       - ./data/loki/compactor:/loki/compactor  # Compactor working directory
     networks:
@@ -181,7 +181,7 @@ services:
     ports:
       - 9090:9090
     volumes:
-      - ./data/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
+      - ./observability/config/observability_backends/prometheus/config/prometheus.yml:/etc/prometheus/prometheus.yml
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
     networks:
@@ -202,7 +202,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./observability/config/grafana/provisioning:/etc/grafana/provisioning
     networks:
       - tic-tac-toe-network
 

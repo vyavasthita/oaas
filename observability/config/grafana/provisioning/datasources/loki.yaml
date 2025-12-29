@@ -1,6 +1,6 @@
 # Loki data source configuration for Grafana provisioning
-# This file tells Grafana how to connect to the Loki service for log queries.
-# Place this file in grafana/provisioning/datasources/loki.yaml
+# Moved from grafana/provisioning/datasources/loki.yaml
+# Place this file in observability/config/grafana/provisioning/datasources/loki.yaml
 
 apiVersion: 1
 
