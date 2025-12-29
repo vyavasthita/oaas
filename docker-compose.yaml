@@ -110,7 +110,7 @@ services:
     healthcheck:
       test: curl --fail http://localhost:5000/health || exit 1
       start_period: 10s
-      interval: 10s
+      interval: 20s
     networks:
       - tic-tac-toe-network
 
