@@ -10,11 +10,26 @@ readme = "README.md"
 python = "~=3.13"
 pydantic-settings = "^2.7.1"
 poetry-plugin-export = "^1.9.0"
+opentelemetry-api = "^1.39.1"
+opentelemetry-sdk = "^1.39.1"
+opentelemetry-exporter-otlp = "^1.39.1"
 
 
 [tool.poetry.group.core.dependencies]
 fastapi = "^0.115.8"
 uvicorn = "^0.34.0"
+
+
+[tool.poetry.group.observability.dependencies]
+# Core OpenTelemetry SDK for logs, metrics, and traces
+opentelemetry-sdk = "^1.25.0"  # Core OpenTelemetry SDK (required for all OTel features)
+
+# OpenTelemetry API for logs
+opentelemetry-api = "^1.25.0"  # OTel API (interfaces for logs, metrics, traces)
+
+# OTLP exporter for logs (HTTP)
+opentelemetry-exporter-otlp = "^1.25.0"  # Exports logs/metrics/traces to OTel Collector via OTLP (HTTP/gRPC)
+
 
 [build-system]
 requires = ["poetry-core"]

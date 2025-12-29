@@ -1,0 +1,9 @@
+# Exporters for OpenTelemetry Collector
+# Exporters send telemetry data to external backends.
+# Here, we configure the Loki exporter for logs.
+# Configures the Loki exporter, which sends logs to our Loki service.
+exporters:
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+    # tenant_id: ""
+    # labels: {"app": "tic-tac-toe"}

@@ -1,0 +1,9 @@
+# Receivers for OpenTelemetry Collector
+# Receivers define how telemetry data is ingested into the Collector.
+# Here, we enable OTLP (gRPC and HTTP) for logs from applications.
+# Defines how the Collector receives logs. OTLP (OpenTelemetry Protocol) is enabled for both gRPC and HTTP, so our app can send logs using either protocol.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:

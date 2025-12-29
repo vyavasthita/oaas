@@ -1,0 +1,6 @@
+# Processors for OpenTelemetry Collector
+# Processors transform, batch, or enrich telemetry data.
+# The batch processor is recommended for production use.
+# Adds a batch processor, which groups logs for efficient export. This is a best practice for performance and reliability.
+processors:
+  batch:

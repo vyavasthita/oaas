@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from src.api.dependencies.config_dependency import Config
-from src.observability.logging import setup_logging
+from src.api.observability.otel_collector.logging.otel_logging_setup import OpenTelemetryLoggingSetup
 from src.api.views import health
 
-import logging
 
-setup_logging()  # Configure logging before app initialization
+# Initialize OpenTelemetry logging before app initialization
+OpenTelemetryLoggingSetup()
 
 app = FastAPI()
 

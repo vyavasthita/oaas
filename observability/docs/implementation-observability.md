@@ -78,3 +78,19 @@ This structure keeps your project clean, modular, and easy to maintain.
 ### 2.1 Logging Module
 - Implement a centralized logging module in your backend (e.g., `observability/logging.py`).
 
+---
+
+## 6. OpenTelemetry Collector: Modular Log Pipeline
+
+- The OpenTelemetry Collector is added as a Docker service for log collection and export to Loki.
+- Config is split into modular files under `observability/config/otel_collector/config/`:
+  - `receivers.yaml`: How logs are received (OTLP)
+  - `processors.yaml`: Processing steps (batch)
+  - `exporters.yaml`: Where logs are sent (Loki)
+  - `pipelines.yaml`: Ties receivers, processors, and exporters
+  - `otel-collector-config.yaml`: Main config (merged from above, see file for merge instructions)
+- The Collector service is defined in `docker-compose.yaml` with line comments for clarity.
+- This setup is log-only for now; metrics and traces can be added later by extending the modular config files.
+
+---
+
