@@ -10,8 +10,8 @@ clean:
 	docker container prune -f
 	docker image prune -f
 	docker network prune -f
-	docker volume rm tic-tac-toe_database_data
-	docker volume rm tic-tac-toe_grafana_data
+	-docker volume rm tic-tac-toe_database_data
+	-docker volume rm tic-tac-toe_grafana_data
 	docker volume prune -f
 
 	rm -rf /data/database/mysql/*

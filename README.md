@@ -122,14 +122,14 @@ To Open Tic Tac Toe backend App go to following url; -
   http://127.0.0.1:5000/docs
 ```
 
-Phpmyadmin gets connected automatically with MySql DB
+#### Phpmyadmin gets connected automatically with MySql DB
 
 ##### Phpmyadmin
 ```bash
   http://0.0.0.0:8081/
 ```
 
-Phpmyadmin gets connected automatically with MySql DB
+#### MySqlWorkbench gets connected automatically with MySql DB
 
 ##### MySqlWorkbench
 ```bash

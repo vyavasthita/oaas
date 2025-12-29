@@ -10,11 +10,21 @@ COPY backend/pyproject.toml /tmp
 COPY backend/poetry.lock /tmp
 
 # Export poetry packages to requirements.txt, to be installed
-RUN poetry export --without-hashes -f requirements.txt --output requirements.txt
+RUN poetry export --without-hashes --with core -f requirements.txt --output requirements.txt
 
 FROM python:3.13.1-alpine3.21
 
-RUN apk update && apk add --virtual build-base g++
+RUN apk update && apk add --no-cache \
+    build-base \
+    g++ \
+    gcc \
+    musl-dev \
+    linux-headers \
+    python3-dev \
+    libffi-dev \
+    openssl-dev \
+    cargo \
+    rust
 
 RUN pip3 install --upgrade pip
 
@@ -39,7 +49,7 @@ COPY backend/src/ /app/src
 # # Expose the port 5000 on which our application runs
 EXPOSE 5000
 
-CMD ["uvicorn", \
+CMD ["python", "-m", "uvicorn", \
     "src.api:app", \
     "--host", \
     "0.0.0.0", \

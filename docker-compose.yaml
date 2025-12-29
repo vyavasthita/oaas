@@ -181,8 +181,8 @@ services:
       - tic-tac-toe-network  
 
   grafana:
-    # image: grafana/grafana
-    image: grafana/otel-lgtm
+    image: grafana/grafana
+    # image: grafana/otel-lgtm
     container_name: grafana
     ports:
       - 8080:3000
@@ -194,6 +194,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
     networks:
       - tic-tac-toe-network
 
