@@ -1,0 +1,16 @@
+# Loki data source configuration for Grafana provisioning
+# This file tells Grafana how to connect to the Loki service for log queries.
+# Place this file in grafana/provisioning/datasources/loki.yaml
+
+apiVersion: 1
+
+datasources:
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    isDefault: false
+    editable: true
+    version: 1
+    jsonData:
+      maxLines: 1000

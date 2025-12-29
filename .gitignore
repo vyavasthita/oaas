@@ -173,3 +173,5 @@ cython_debug/
 data/database/mysql
 data/grafana
 .DS_Store
+# Loki WAL (write-ahead log) directory
+data/loki/wal/**

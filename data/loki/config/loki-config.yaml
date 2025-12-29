@@ -1,0 +1,56 @@
+# -----------------------------
+# Loki Configuration Explained
+# -----------------------------
+# This file configures how Loki ingests, stores, and serves logs.
+# It is required so Loki knows where to listen, how to store data, and how to organize log chunks and indexes.
+# For local/dev use, this config is simple and uses the filesystem for storage.
+
+auth_enabled: false  # Disable authentication (OK for local/dev)
+
+server:
+  http_listen_port: 3100  # Loki's API port
+
+ingester:
+  lifecycler:
+    address: 127.0.0.1  # Used for ring communication (single node in dev)
+    ring:
+      kvstore:
+        store: inmemory  # Store ring state in memory (no clustering)
+      replication_factor: 1  # Only one copy of data (dev)
+    final_sleep: 0s
+  chunk_idle_period: 5m  # How long to keep a chunk open with no new logs
+  chunk_retain_period: 30s  # How long to keep chunks in memory after closing
+  max_transfer_retries: 0
+
+schema_config:
+  configs:
+    - from: 2020-10-24
+      store: boltdb-shipper  # Use BoltDB for index storage
+      object_store: filesystem  # Store log chunks on local disk
+      schema: v11  # Loki's log schema version
+      index:
+        prefix: index_  # Prefix for index files
+        period: 24h  # Create a new index every 24 hours
+
+storage_config:
+  boltdb_shipper:
+    active_index_directory: /loki/index  # Where to store active index files
+    cache_location: /loki/index  # Where to cache index data
+    shared_store: filesystem  # Use local disk for index storage
+  filesystem:
+    directory: /loki/chunks  # Where to store log chunks
+
+compactor:
+  working_directory: /loki/compactor  # Directory for compactor to store data
+
+limits_config:
+  enforce_metric_name: false  # Allow logs without metric names
+  reject_old_samples: true  # Reject logs older than max age
+  reject_old_samples_max_age: 168h  # Max log age (7 days)
+
+chunk_store_config:
+  max_look_back_period: 0s  # No look-back limit
+
+table_manager:
+  retention_deletes_enabled: false  # Don't delete old logs (dev)
+  retention_period: 0s  # Keep all logs (dev)

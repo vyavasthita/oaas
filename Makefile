@@ -36,3 +36,14 @@ helm:
 
 helm-cl:
 	bash helm/monitoring/scripts/clean.sh
+
+.PHONY: restart
+restart:
+	@if [ -z "$(c)" ]; then \
+		echo "Usage: make restart c=container1,container2,..."; \
+		exit 1; \
+	fi; \
+	for container in $(subst ',', ,$(c)); do \
+		echo "Restarting $$container..."; \
+		docker compose restart $$container; \
+	done

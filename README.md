@@ -1,3 +1,28 @@
+# Project Directory Structure
+
+This project uses a modular directory structure to separate code, configuration, data, and documentation. Here is an overview of the main directories:
+
+| Directory                | Purpose                                                                                 |
+|--------------------------|-----------------------------------------------------------------------------------------|
+| ./backend/               | Python FastAPI backend application source code and Docker build context.                 |
+| ./data/                  | Persistent data and configuration for services (databases, observability, etc).         |
+| ./data/database/         | MySQL database data (persisted between container restarts).                             |
+| ./data/loki/             | Loki log storage and configuration.                                                     |
+| ./data/loki/config/      | Loki configuration files (e.g., loki-config.yaml).                                      |
+| ./data/loki/wal/         | Loki Write-Ahead Log (WAL) directory (must be writable by Loki container).              |
+| ./data/prometheus/       | Prometheus configuration files (e.g., prometheus.yaml).                                 |
+| ./data/grafana/          | Grafana persistent data (dashboards, users, etc).                                       |
+| ./docs/                  | Project documentation, including observability setup steps.                             |
+| ./grafana/               | Grafana provisioning (data sources, dashboards) and custom configuration.                |
+| ./grafana/provisioning/  | Grafana provisioning root directory.                                                     |
+| ./grafana/provisioning/datasources/ | Data source configuration files for Grafana (e.g., Loki, Prometheus).         |
+| ./helm/                  | Helm charts and scripts for Kubernetes-based deployments (if used).                     |
+
+> **Note:**
+> - All configuration files use the `.yaml` extension for consistency.
+> - Data directories are mounted as Docker volumes for persistence and configuration.
+
+<p align="right">(<a href="#readme-top">Back To Top</a>)</p>
 # tic-tac-toe
 Tic Tac Toe with N number of players and a bot
 

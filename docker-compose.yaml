@@ -96,14 +96,7 @@ services:
     ports:
       - "5000:5000"
     container_name: backend
-    environment:
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://grafana:4317
-      OTEL_SERVICE_NAME: backend-app
-      OTEL_EXPORTER_OTLP_TIMEOUT: 5
-      OTEL_EXPORTER_OTLP_METRICS_INSECURE: true
-      OTEL_EXPORTER_OTLP_TRACES_INSECURE: true
-      OTEL_EXPORTER_PROMETHEUS_PORT: 9090
-      OTEL_METRICS_EXPORTER: prometheus
+    environment: {}
     depends_on:
       database:
         condition: service_healthy
@@ -168,17 +161,32 @@ services:
 #     networks:
 #         - code-network
 
+  # Loki: log aggregation service for observability
+  loki:
+    image: grafana/loki:2.9.4
+    container_name: loki
+    ports:
+      - "3100:3100"  # Expose Loki's HTTP API
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./data/loki/config/loki-config.yaml:/etc/loki/local-config.yaml  # Mount custom config if needed
+      - ./data/loki/wal:/wal  # Loki WAL directory must be writable
+      - ./data/loki/compactor:/loki/compactor  # Compactor working directory
+    networks:
+      - tic-tac-toe-network
+      
   prometheus:
     image: prom/prometheus
     container_name: prometheus
     ports:
       - 9090:9090
     volumes:
-      - ./data/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./data/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
     networks:
       - tic-tac-toe-network  
+
 
   grafana:
     image: grafana/grafana

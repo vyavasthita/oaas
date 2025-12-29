@@ -5,14 +5,10 @@ description = "Tic Tac Toe Backend"
 authors = ["Dilip Sharma"]
 readme = "README.md"
 
+
 [tool.poetry.dependencies]
 python = "~=3.13"
-opentelemetry-distro = "^0.51b0"
-opentelemetry-instrumentation-fastapi = "^0.51b0"
-opentelemetry-api = "^1.30.0"
-opentelemetry-exporter-otlp = "^1.30.0"
 pydantic-settings = "^2.7.1"
-opentelemetry-sdk = "^1.30.0"
 poetry-plugin-export = "^1.9.0"
 
 
