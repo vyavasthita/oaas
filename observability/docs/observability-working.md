@@ -4,13 +4,40 @@ This document explains the end-to-end flow of logging observability in our FastA
 
 ---
 
+
 ## 1. Logging Flow: From App to Grafana
+
+
+### What is the OpenTelemetry Log Format?
+
+The OpenTelemetry log format is a structured, vendor-neutral format for representing log data in a way that is consistent, machine-readable, and compatible with observability pipelines. Key features:
+
+- Each log record is a structured object (not plain text), typically serialized as JSON or Protobuf.
+- Fields include:
+  - Timestamp (when the log was emitted)
+  - Severity (level, e.g., INFO, ERROR)
+  - Body (the log message)
+  - Attributes (key-value pairs for context, e.g., service name, environment, trace/span IDs)
+  - Resource (describes the emitting service, e.g., service.name, service.version)
+- Designed for interoperability with metrics and traces, enabling correlation across telemetry data.
+- Used by OpenTelemetry SDKs, Collectors, and backends like Loki, making logs queryable and filterable by labels/attributes.
+
+In this project, Python logs are converted to this format by the OpenTelemetry LoggingHandler before being exported.
 
 ### Step-by-Step Process
 
 1. **Log Generation (App Service):**
    - The FastAPI backend emits logs using Python's standard logging module.
    - The OpenTelemetry LoggingHandler is attached to the root logger, so all logs are captured and formatted for OTel export.
+   - **Detail:**
+     - By attaching the LoggingHandler to the root logger, every log message from any part of the backend—including third-party libraries—is intercepted automatically.
+     - The LoggingHandler enriches each log with metadata (such as service name and environment), ensuring logs are consistently tagged for observability.
+     - Each log is converted from the standard Python log format into the OpenTelemetry log format, making it compatible with the rest of the observability pipeline.
+     - This approach guarantees that all logs—regardless of their source—are:
+       - Captured centrally
+       - Enriched with useful context
+       - Exported to the OpenTelemetry Collector for further processing
+     - No changes are needed to individual log statements throughout the codebase, making the setup robust and easy to maintain.
 
 2. **Log Export (OTLP):**
    - The backend uses the OpenTelemetry Python SDK to export logs via the OTLP protocol (HTTP or gRPC) to the OpenTelemetry Collector endpoint (`otel-collector:4318`).

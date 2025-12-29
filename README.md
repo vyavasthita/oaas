@@ -39,14 +39,6 @@ backend/          # FastAPI backend
 
 ---
 
-## Prerequisites
-- Docker
-- Docker Compose
-- Git
-- GNU Make
-
----
-
 ## Installation & Run
 ```bash
 # Clone repo
@@ -69,21 +61,16 @@ $ make all
 
 ---
 
-## Usage
-- FastAPI backend: http://127.0.0.1:5000/docs
-- PhpMyAdmin: http://0.0.0.0:8081/
-- MySQL Workbench: http://0.0.0.0:3000/
-- Prometheus: http://localhost:9090/
-- Grafana: http://localhost:8080/
-
----
-
 ## Observability
 - OpenTelemetry Collector: Collects logs from backend, exports to Loki
 - Loki: Stores and indexes logs
 - Prometheus: Scrapes metrics (can be extended)
 - Grafana: Visualizes logs and metrics
 - Config files: `observability/config/`, data: `observability/data/`
+
+**How log capture works:**
+- The OpenTelemetry LoggingHandler is attached to the root logger in our backend. This means every log message—no matter which part of the app or library it comes from—is intercepted, enriched with resource attributes (like service name), and exported as an OpenTelemetry log record.
+- The LoggingHandler ensures all logs are consistently formatted and sent to the OpenTelemetry Collector endpoint, where they are processed and forwarded to Loki for storage and Grafana for visualization.
 
 ---
 
