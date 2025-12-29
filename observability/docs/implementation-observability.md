@@ -50,9 +50,6 @@ data/
 - All static configuration for observability tools is under `observability/config/`.
 - All runtime/mount/generated data is under `data/`.
 - If you add Kubernetes or other platforms, you can add new directories under `observability/` (e.g., `observability/kubernetes/`).
-
-This structure keeps your project clean, modular, and easy to maintain.
-
 ---
 
 
