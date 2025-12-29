@@ -5,7 +5,7 @@ from src.api.views import health
 
 
 # Initialize OpenTelemetry logging before app initialization
-OpenTelemetryLoggingSetup()
+otel_setup = OpenTelemetryLoggingSetup()
 
 app = FastAPI()
 
