@@ -2,7 +2,7 @@
 
 ---
 
-> For shared OpenTelemetry and observability concepts, see `observability-common.md`.
+> For shared OpenTelemetry and observability concepts, see [observability-common.md](observability-common.md).
 
 ---
 
@@ -131,37 +131,37 @@ Below is a detailed block diagram showing the complete journey of a log message 
 
 ```mermaid
 flowchart TD
-  A1[Python logging.info / logging.error]
+  A1[Python logging.info or error]
   A2[OpenTelemetry LoggingHandler]
   A3[LoggerProvider]
   A4[BatchLogRecordProcessor]
   A5[OTLPLogExporter]
-  B1[OTLP Receiver (HTTP/gRPC)]
+  B1[OTLP Receiver HTTP or gRPC]
   B2[Batch Processor]
   B3[Loki Exporter]
-  C1[HTTP API Endpoint /loki/api/v1/push]
-  C2[WAL (Write-Ahead Log)]
-  C3[Chunks (Compressed Log Data)]
-  C4[Index (Label Metadata)]
-  C5[Mapped Storage: data/loki/]
+  C1[Loki API Endpoint]
+  C2[WAL Write Ahead Log]
+  C3[Chunks Compressed Log Data]
+  C4[Index Label Metadata]
+  C5[Mapped Storage data-loki]
   D1[Loki Data Source]
   D2[Log Explorer]
   D3[Dashboards]
 
   A1 -->|Log message| A2
   A2 -->|Convert to OTel log record| A3
-  A3 -->|Buffer & enrich| A4
-  A4 -->|Batch & prepare| A5
-  A5 -->|Push logs (OTLP HTTP/gRPC)| B1
+  A3 -->|Buffer and enrich| A4
+  A4 -->|Batch and prepare| A5
+  A5 -->|Push logs OTLP| B1
   B1 -->|Receive log records| B2
-  B2 -->|Batch & process| B3
-  B3 -->|Push logs (HTTP POST)| C1
+  B2 -->|Batch and process| B3
+  B3 -->|Push logs HTTP| C1
   C1 -->|Ingest logs| C2
   C2 -->|Buffer| C3
   C3 -->|Store| C4
   C4 -->|Index| C5
   C5 -->|Query logs| D1
-  D1 -->|Label filter/search| D2
+  D1 -->|Label filter or search| D2
   D2 -->|Build dashboards| D3
 ```
 

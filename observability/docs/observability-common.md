@@ -79,4 +79,5 @@ This document covers the foundational concepts, protocols, and architecture patt
 
 ---
 
-For details on logs, metrics, or traces, see the respective documentation files.
+For details on logs, see [observability-logs.md](observability-logs.md).
+For metrics and traces, see their respective documentation files (to be added).

@@ -19,8 +19,8 @@ This document explains the end-to-end flow of logging observability in our FastA
 
 # This file has been split for clarity and maintainability.
 
-- For common OpenTelemetry and observability concepts, see: `observability-common.md`
-- For logging-specific observability details, see: `observability-logs.md`
+- For common OpenTelemetry and observability concepts, see: [observability-common.md](observability-common.md)
+- For logging-specific observability details, see: [observability-logs.md](observability-logs.md)
 
 # (In the future, add similar files for metrics and traces.)
     D[Grafana]
