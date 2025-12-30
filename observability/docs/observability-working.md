@@ -12,6 +12,69 @@ This document explains the end-to-end flow of logging observability in our FastA
 ---
 
 
+
+## Protocols Used in the Log Pipeline: OTLP vs REST
+
+### Push vs Pull: How Data Moves from App to Loki
+
+For each step in the log pipeline, the mechanism is as follows:
+
+| Step                              | Mechanism | Who initiates?         |
+|-----------------------------------|-----------|------------------------|
+| App → OTEL Collector              | Push      | App (OTLP exporter)    |
+| OTEL Collector → Loki             | Push      | Collector (Loki exporter) |
+| Loki Storage                      | Passive   | Loki only receives     |
+
+- **Push:** The sender initiates the connection and transmits data to the receiver.
+- **Pull:** The receiver requests or fetches data from the sender (not used in this pipeline).
+- **Passive:** Loki does not initiate any connection; it only listens for incoming data.
+
+**Summary:**
+- All steps from app to Loki are push-based. There is no pull mechanism anywhere in this log pipeline. Each component actively sends (pushes) data to the next, and Loki passively receives logs via its HTTP API endpoint.
+### Why OTLP Instead of a Generic REST API?
+
+While REST APIs are vendor-agnostic and widely used, OTLP (OpenTelemetry Protocol) is chosen for app-to-Collector communication because:
+
+1. **Purpose-built for Telemetry:**
+  - OTLP defines a strict, efficient, and standardized data model and serialization (Protobuf or JSON) for logs, metrics, and traces.
+  - This ensures compatibility, performance, and semantic consistency across all OpenTelemetry-compatible tools and vendors.
+
+2. **Optimized for Observability:**
+  - REST APIs are generic and do not define how to represent telemetry data, nor do they support batching, compression, or streaming as efficiently as OTLP.
+  - OTLP supports both HTTP and gRPC transports, enabling high-throughput, low-latency, and bi-directional streaming—features important for observability pipelines.
+
+3. **Interoperability and Future-proofing:**
+  - Using OTLP ensures seamless interoperability between SDKs, Collectors, and backends, with no need for custom mapping or translation.
+  - It is designed to evolve with the observability ecosystem, supporting new telemetry types and features as they emerge.
+
+**Summary:**
+
+- OTLP is not just a transport (like REST), but a full protocol and data model for observability, designed for performance, interoperability, and future-proofing.
+- REST is generic and flexible, but lacks the telemetry-specific features and guarantees that OTLP provides.
+- That’s why OpenTelemetry uses OTLP for all agent/collector communication, not a generic REST API.
+
+**Why do we use OTLP from the app to the Collector, but HTTP REST from the Collector to Loki?**
+
+- **App → OTEL Collector:**
+  - The OpenTelemetry SDK in the app uses the OTLP protocol (OpenTelemetry Protocol) to export logs, metrics, and traces.
+  - OTLP is a vendor-neutral, efficient protocol designed specifically for telemetry data. It supports both HTTP and gRPC transports, but the payload is in OTLP format (Protobuf or JSON), not a typical REST API.
+  - The Collector's OTLP receiver is designed to accept this protocol and format.
+
+- **OTEL Collector → Loki:**
+  - Loki does **not** natively support OTLP. Instead, it exposes a REST API endpoint (`/loki/api/v1/push`) for log ingestion.
+  - The OTEL Collector's Loki exporter converts log data into the format Loki expects and sends it via HTTP POST to this REST endpoint.
+  - This is a push-based integration: the Collector acts as a client, and Loki passively receives logs.
+
+**Summary Table:**
+
+| Step                        | Protocol         | Data Format         | Direction         |
+|-----------------------------|------------------|---------------------|-------------------|
+| App → OTEL Collector        | OTLP (HTTP/gRPC) | OTLP (Protobuf/JSON)| Push (SDK → Collector) |
+| OTEL Collector → Loki       | HTTP REST        | Loki JSON           | Push (Collector → Loki) |
+
+This design is required because each component supports different protocols for log ingestion. The Collector acts as a bridge, translating from OTLP to the format Loki expects.
+
+---
 ## 1. Logging Flow: From App to Grafana
 
 
