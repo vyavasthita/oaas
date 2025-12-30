@@ -187,7 +187,7 @@ services:
     command: ["--config=/etc/otelcol/otel-collector-config.yaml"]
     volumes:
       # Mount the merged config file (see otel-collector-config.yaml for merge instructions)
-      - ./observability/config/otel_collector/config/otel-collector-config.yaml:/etc/otelcol/otel-collector-config.yaml
+      - ./observability/config/otel_collector/config/otel-collector-config.generated.yaml:/etc/otelcol/otel-collector-config.yaml
     ports:
       - "4317:4317"  # OTLP gRPC
       - "4318:4318"  # OTLP HTTP

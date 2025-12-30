@@ -16,7 +16,7 @@ clean:
 
 	rm -rf /data/database/mysql/*
 
-up:
+up: otel
 	docker compose -f $(COMPOSE_FILE) up -d --build --remove-orphans
 
 down:
@@ -47,3 +47,8 @@ restart:
 		echo "Restarting $$container..."; \
 		docker compose restart $$container; \
 	done
+
+# Merge modular OpenTelemetry Collector YAML files into a single config
+.PHONY: otel
+otel:
+	./scripts/merge-otel-config.sh

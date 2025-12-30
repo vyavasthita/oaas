@@ -29,12 +29,21 @@ A modular FastAPI backend for Tic Tac Toe (N players and bot) with full observab
 
 ---
 
+
 ## Directory Structure
 ```
 observability/
   config/         # Static config files
+    otel_collector/
+      config/
+        receivers.yaml     # Modular OTel Collector config: receivers
+        processors.yaml    # Modular OTel Collector config: processors
+        exporters.yaml     # Modular OTel Collector config: exporters
+        pipelines.yaml     # Modular OTel Collector config: service/pipelines
+        otel-collector-config.generated.yaml # Auto-generated merged config (do not edit directly)
   data/           # Runtime data (Loki, Prometheus, Grafana)
 backend/          # FastAPI backend
+scripts/          # Project scripts (e.g., merge-otel-config.sh)
 ```
 
 ---

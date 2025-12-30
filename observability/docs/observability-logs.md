@@ -87,7 +87,7 @@ In this project, Python logs are converted to this format by the OpenTelemetry L
 3. **Log Collection (OpenTelemetry Collector):**
   - The OpenTelemetry Collector is a standalone service (usually running as a Docker container) that acts as the central log pipeline in our observability stack.
   - Our backend's OpenTelemetry SDK exports logs to the OTLP endpoint (`OTEL_COLLECTOR_OTLP_ENDPOINT`). The Collector is configured to listen on this endpoint and passively receives incoming logs and other telemetry data.
-  - The OTLP receiver in the Collector is configured in `receivers.yaml` and merged into `otel-collector-config.yaml`. It can accept telemetry from any service or agent that supports OTLP.
+  - The OTLP receiver in the Collector is configured in `receivers.yaml` and merged into `otel-collector-config.generated.yaml`. It can accept telemetry from any service or agent that supports OTLP.
   - Once logs are received, the Collector processes them using a batch processor (configured in `processors.yaml`). The batch processor buffers logs, applies any configured transformations or enrichments, and flushes them in batches for efficient downstream delivery.
   - The Collector can also apply additional processors for filtering, resource enrichment, or custom logic as needed.
   - After processing, the Collector exports logs to Loki using the Loki exporter (configured in `exporters.yaml`). The Loki exporter pushes logs to the Loki backend for storage and indexing.
@@ -193,7 +193,7 @@ This diagram and explanation cover every major component and step in the log pip
   - Uses `otel_logging_setup.py` to configure OTel export and logger provider.
 - **Collector Config:**
   - Modular files under `observability/config/otel_collector/config/` define receivers, processors, exporters, and pipelines.
-  - These are merged into `otel-collector-config.yaml` for the Collector service.
+  - These are merged into `otel-collector-config.generated.yaml` for the Collector service (auto-generated, do not edit directly).
 - **Loki Config:**
   - `observability/config/observability_backends/loki/config/loki-config.yaml` sets up Loki's storage and indexing.
 - **Grafana Provisioning:**
