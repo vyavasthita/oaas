@@ -1,9 +1,10 @@
 # Service pipelines for OpenTelemetry Collector
 # Pipelines tie together receivers, processors, and exporters for each data type.
 # Defines a log pipeline that connects the OTLP receiver, batch processor, and Loki exporter. This is the “wiring” that makes the Collector work.
+
 service:
   pipelines:
     logs:
       receivers: [otlp]
-      processors: [attributes/log-labels, batch]
+      processors: [batch]
       exporters: [loki]

@@ -5,8 +5,5 @@
 
 processors:
   batch:
-  attributes/log-labels:
-    actions:
-      - key: exporter
-        action: delete
+    timeout: 1s
 
