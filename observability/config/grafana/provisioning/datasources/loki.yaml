@@ -1,8 +1,7 @@
+apiVersion: 1
 # Loki data source configuration for Grafana provisioning
 # Moved from grafana/provisioning/datasources/loki.yaml
 # Place this file in observability/config/grafana/provisioning/datasources/loki.yaml
-
-apiVersion: 1
 
 datasources:
   - name: Loki

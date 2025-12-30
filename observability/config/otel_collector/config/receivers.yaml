@@ -7,3 +7,5 @@ receivers:
     protocols:
       grpc:
       http:
+
+# Enable OTLP for traces (already covers logs and traces)

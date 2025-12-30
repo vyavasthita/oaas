@@ -18,23 +18,19 @@ class OpenTelemetryLoggingSetup:
 	Sets up OpenTelemetry logging for the application.
 	This class wires together the exporter, processor, and logger provider.
 	"""
-	def __init__(self, otlp_endpoint: str = "http://otel-collector:4318/v1/logs"):
+	def __init__(self, otlp_endpoint: str, service_name: str):
 		# Initialize the OTLP log exporter
 		self.exporter_wrapper = OTLPLogExporterWrapper(endpoint=otlp_endpoint)
-        
 		# Initialize the log processor with the exporter
 		self.processor = OTLPLogProcessor(self.exporter_wrapper.get_exporter()).get_processor()
-        
 		# Set up the logger provider and add the processor
 		self.logger_provider = LoggerProvider(
-			resource=Resource.create({"service.name": "tic-tac-toe-backend"})
+			resource=Resource.create({"service.name": service_name})
 		)
 		self.logger_provider.add_log_record_processor(self.processor)
 		set_logger_provider(self.logger_provider)
-        
 		# Optionally, attach the OpenTelemetry logger to the Python logging system
 		self.attach_to_python_logging()
-        
 		# Ensure logs are flushed on shutdown
 		atexit.register(self.shutdown)
 

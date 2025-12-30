@@ -174,7 +174,7 @@ data/database/mysql
 data/grafana
 .DS_Store
 # Loki WAL (write-ahead log) directory
-data/loki/wal/**
+data/**
 
 # Ignore generated OpenTelemetry Collector config
 observability/config/otel_collector/config/otel-collector-config.generated.yaml

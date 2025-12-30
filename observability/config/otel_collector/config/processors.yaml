@@ -5,5 +5,5 @@
 
 processors:
   batch:
-    timeout: 1s
+    timeout: 10s
 

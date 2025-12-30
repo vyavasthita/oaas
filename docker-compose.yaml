@@ -96,7 +96,11 @@ services:
     ports:
       - "5000:5000"
     container_name: backend
-    environment: {}
+    environment:
+      OTEL_EXPORTER_LOGS_ENDPOINT: "http://otel-collector:14318/v1/logs"
+      OTEL_EXPORTER_TRACES_ENDPOINT: "http://otel-collector:14318/v1/traces"
+      OTEL_SERVICE_NAME: "tic-tac-toe-backend"
+      RATE_LIMITED_LOG_INTERVAL_SECONDS: 60
     depends_on:
       database:
         condition: service_healthy
@@ -161,6 +165,7 @@ services:
 #     networks:
 #         - code-network
       
+
   # Loki: log aggregation service for observability
   loki:
     image: grafana/loki:2.9.4
@@ -179,6 +184,26 @@ services:
       retries: 10
     networks:
       - tic-tac-toe-network
+
+  # Tempo: distributed tracing backend for observability
+  tempo:
+    image: grafana/tempo:2.5.0
+    container_name: tempo
+    command: ["-config.file=/etc/tempo/tempo.yaml"]
+    ports:
+      - "3200:3200"   # Tempo HTTP API (query frontend)
+      - "4317:4317"   # OTLP gRPC (traces)
+      - "4318:4318"   # OTLP HTTP (traces)
+    volumes:
+      - ./observability/config/observability_backends/tempo/config/tempo.yaml:/etc/tempo/tempo.yaml
+      - ./data/tempo:/var/tempo
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3200/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - tic-tac-toe-network
       
   # OpenTelemetry Collector for log ingestion and export to Loki
   otel-collector:
@@ -189,8 +214,8 @@ services:
       # Mount the merged config file (see otel-collector-config.yaml for merge instructions)
       - ./observability/config/otel_collector/config/otel-collector-config.generated.yaml:/etc/otelcol/otel-collector-config.yaml
     ports:
-      - "4317:4317"  # OTLP gRPC
-      - "4318:4318"  # OTLP HTTP
+      - "14317:4317"  # OTLP gRPC (changed to avoid conflict with Tempo)
+      - "14318:4318"  # OTLP HTTP (changed to avoid conflict)
     depends_on:
       loki:
         condition: service_healthy
