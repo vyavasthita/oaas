@@ -23,11 +23,11 @@ This document covers the foundational concepts, protocols, and architecture patt
 
 ### Push vs Pull: Data Movement
 
-| Step                              | Mechanism | Who initiates?         |
-|-----------------------------------|-----------|------------------------|
-| App → OTEL Collector              | Push      | App (OTLP exporter)    |
-| OTEL Collector → Backend (e.g., Loki) | Push      | Collector (Exporter)   |
-| Backend Storage                   | Passive   | Backend only receives  |
+| Step                                   | Mechanism | Who initiates?               |
+|----------------------------------------|-----------|------------------------------|
+| App → OTEL Collector                   | Push      | App (OTLP exporter)          |
+| OTEL Collector → Backend (e.g., Loki)  | Push      | Collector (Exporter)         |
+| Backend Storage                        | Passive   | Backend only receives        |
 
 - **Push:** Sender initiates and transmits data.
 - **Pull:** Receiver fetches data (not used in this pipeline).
@@ -80,4 +80,5 @@ This document covers the foundational concepts, protocols, and architecture patt
 ---
 
 For details on logs, see [observability-logs.md](observability-logs.md).
-For metrics and traces, see their respective documentation files (to be added).
+For metrics, see [observability-metrics.md](observability-metrics.md).
+For traces, see [observability-traces.md](observability-traces.md).

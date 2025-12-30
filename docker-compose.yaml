@@ -99,6 +99,8 @@ services:
     environment:
       OTEL_EXPORTER_LOGS_ENDPOINT: "http://otel-collector:4318/v1/logs"
       OTEL_EXPORTER_TRACES_ENDPOINT: "http://otel-collector:4318/v1/traces"
+      OTEL_EXPORTER_METRICS_ENDPOINT: "http://otel-collector:4318/v1/metrics"
+      OTEL_METRICS_EXPORTER: "otlp"
       OTEL_SERVICE_NAME: "tic-tac-toe-backend"
       RATE_LIMITED_LOG_INTERVAL_SECONDS: 2
     depends_on:
@@ -178,10 +180,11 @@ services:
       - ./data/loki/wal:/wal  # Loki WAL directory must be writable
       - ./data/loki/compactor:/loki/compactor  # Compactor working directory (Loki compactor merges and optimizes index/chunk files for efficient storage and query)
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3100/ready"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+        test: ["CMD", "wget", "--spider", "-q", "http://localhost:3100/ready"]
+        interval: 10s
+        timeout: 5s
+        retries: 10
+
     networks:
       - tic-tac-toe-network
 

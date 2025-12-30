@@ -8,29 +8,47 @@ This document explains the end-to-end flow of logging observability in our FastA
 
 ---
 
-**OTLP Endpoint:**
 
-`OTEL_COLLECTOR_OTLP_ENDPOINT = http://otel-collector:4318`
+**OTLP Endpoints:**
+
+- `OTEL_EXPORTER_LOGS_ENDPOINT = http://otel-collector:4318/v1/logs`
+- `OTEL_EXPORTER_TRACES_ENDPOINT = http://otel-collector:4318/v1/traces`
+- `OTEL_EXPORTER_METRICS_ENDPOINT = http://otel-collector:4318/v1/metrics`
 
 ---
 
 ## Protocols Used in the Log Pipeline: OTLP vs REST
 
-
 # This file has been split for clarity and maintainability.
 
 - For common OpenTelemetry and observability concepts, see: [observability-common.md](observability-common.md)
 - For logging-specific observability details, see: [observability-logs.md](observability-logs.md)
+- For metrics-specific observability details, see: [observability-metrics.md](observability-metrics.md)
+- For traces-specific observability details, see: [observability-traces.md](observability-traces.md)
 
-# (In the future, add similar files for metrics and traces.)
-    D[Grafana]
+
+# End-to-End Observability Flow
+
+```mermaid
+graph TD
+    A[FastAPI App]
+    B[OTel Collector]
+    C[Loki]
+    D[Tempo]
     E[Prometheus]
+    F[Grafana]
 
     A -- OTLP logs --> B
     B -- Loki push --> C
-    C -- Grafana query --> D
-    A -- Metrics --> E
-    E -- Grafana query --> D
+    C -- Grafana query --> F
+
+    A -- OTLP traces --> B
+    B -- Tempo push --> D
+    D -- Grafana query --> F
+
+    A -- OTLP metrics --> B
+    B -- Prometheus exporter --> E
+    E -- Grafana query --> F
 ```
 
 ---

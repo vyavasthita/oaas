@@ -8,4 +8,11 @@ receivers:
       grpc:
       http:
 
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'backend'
+          static_configs:
+            - targets: ['backend:9464']
+
 # Enable OTLP for traces (already covers logs and traces)

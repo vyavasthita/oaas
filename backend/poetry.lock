@@ -1283,6 +1283,21 @@ poetry = ">=2.0.0,<3.0.0"
 poetry-core = ">=1.7.0,<3.0.0"
 
 [[package]]
+name = "prometheus-client"
+version = "0.20.0"
+description = "Python client for the Prometheus monitoring system."
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "prometheus_client-0.20.0-py3-none-any.whl", hash = "sha256:cde524a85bce83ca359cc837f28b8c0db5cac7aa653a588fd7e84ba061c329e7"},
+    {file = "prometheus_client-0.20.0.tar.gz", hash = "sha256:287629d00b147a32dcb2be0b9df905da599b2d82f80377083ec8463309a4bb89"},
+]
+
+[package.extras]
+twisted = ["twisted"]
+
+[[package]]
 name = "protobuf"
 version = "6.33.2"
 description = ""
@@ -2115,4 +2130,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "~=3.13"
-content-hash = "8aefd58a35d5b77b4a323cd6e35da3d7eafbfb5f69b62197bdf8eabc8cdc6170"
+content-hash = "682ad6621c595bfc28ffe5329088b81d237739bd6f56e15d1a5ee07412382197"

@@ -31,6 +31,9 @@ opentelemetry-instrumentation = "^0.60b1"  # OTel auto-instrumentation base
 # FastAPI Instrumentation: Auto-instruments FastAPI for tracing
 opentelemetry-instrumentation-fastapi = "^0.60b1"  # FastAPI tracing integration
 
+# OpenTelemetry Metrics Instrumentation
+prometheus-client = "^0.20.0"  # Prometheus Python client for custom metrics
+
 
 [tool.poetry.group.core.dependencies]
 fastapi = "^0.115.8"  # FastAPI web framework
