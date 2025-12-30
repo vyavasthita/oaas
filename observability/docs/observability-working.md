@@ -27,33 +27,76 @@ This document explains the end-to-end flow of logging observability in our FastA
 - For traces-specific observability details, see: [observability-traces.md](observability-traces.md)
 
 
-# End-to-End Observability Flow
+
+# Consolidated Observability Block Diagram
+
+
 
 ```mermaid
-graph TD
-    A[FastAPI App]
-    B[OTel Collector]
-    C[Loki]
-    D[Tempo]
-    E[Prometheus]
-    F[Grafana]
+flowchart LR
+APP[FastAPI App]
+COLLECTOR[OpenTelemetry Collector]
+LOKI[Loki (Logs)]
+TEMPO[Tempo (Traces)]
+PROM[Prometheus (Metrics)]
+GRAFANA[Grafana]
+APP --|Logs (OTLP)| COLLECTOR
+APP --|Traces (OTLP)| COLLECTOR
+APP --|Metrics (OTLP)| COLLECTOR
+COLLECTOR --|Logs| LOKI
+COLLECTOR --|Traces| TEMPO
+COLLECTOR --|Metrics| PROM
+LOKI --|Logs| GRAFANA
+TEMPO --|Traces| GRAFANA
+PROM --|Metrics| GRAFANA
 
-    A -- OTLP logs --> B
-    B -- Loki push --> C
-    C -- Grafana query --> F
+APP[FastAPI App]
 
-    A -- OTLP traces --> B
-    B -- Tempo push --> D
-    D -- Grafana query --> F
+COLLECTOR[OpenTelemetry Collector]
 
-    A -- OTLP metrics --> B
-    B -- Prometheus exporter --> E
-    E -- Grafana query --> F
+LOKI[Loki (Logs)]
+
+TEMPO[Tempo (Traces)]
+
+PROM[Prometheus (Metrics)]
+
+GRAFANA[Grafana]
+
+APP --|Logs (OTLP)| COLLECTOR
+APP --|Traces (OTLP)| COLLECTOR
+APP --|Metrics (OTLP)| COLLECTOR
+
+COLLECTOR --|Logs| LOKI
+COLLECTOR --|Traces| TEMPO
+COLLECTOR --|Metrics| PROM
+
+LOKI --|Logs| GRAFANA
+TEMPO --|Traces| GRAFANA
+PROM --|Metrics| GRAFANA
+
+APP[FastAPI App]
+COLLECTOR[OpenTelemetry Collector]
+LOKI[Loki (Logs)]
+TEMPO[Tempo (Traces)]
+PROM[Prometheus (Metrics)]
+GRAFANA[Grafana]
+
+APP --|Logs (OTLP)| COLLECTOR
+APP --|Traces (OTLP)| COLLECTOR
+APP --|Metrics (OTLP)| COLLECTOR
+
+COLLECTOR --|Logs| LOKI
+COLLECTOR --|Traces| TEMPO
+COLLECTOR --|Metrics| PROM
+
+LOKI --|Logs| GRAFANA
+TEMPO --|Traces| GRAFANA
+PROM --|Metrics| GRAFANA
 ```
 
 ---
 
-## 5. Key Points
+## Key Points
 
 - All configuration is modular and separated for maintainability.
 - Data directories are kept separate from config for clean operation.
