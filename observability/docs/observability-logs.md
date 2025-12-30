@@ -131,56 +131,38 @@ Below is a detailed block diagram showing the complete journey of a log message 
 
 ```mermaid
 flowchart TD
-  %% App (FastAPI Backend)
   A1[Python logging.info / logging.error]
   A2[OpenTelemetry LoggingHandler]
   A3[LoggerProvider]
   A4[BatchLogRecordProcessor]
   A5[OTLPLogExporter]
-
-  %% Collector (OpenTelemetry Collector)
   B1[OTLP Receiver (HTTP/gRPC)]
   B2[Batch Processor]
   B3[Loki Exporter]
-
-  %% Loki (Loki Backend)
   C1[HTTP API Endpoint /loki/api/v1/push]
   C2[WAL (Write-Ahead Log)]
   C3[Chunks (Compressed Log Data)]
   C4[Index (Label Metadata)]
   C5[Mapped Storage: data/loki/]
-
-  %% Grafana (Grafana UI)
   D1[Loki Data Source]
   D2[Log Explorer]
   D3[Dashboards]
 
-  %% App log flow
   A1 -->|Log message| A2
   A2 -->|Convert to OTel log record| A3
   A3 -->|Buffer & enrich| A4
   A4 -->|Batch & prepare| A5
   A5 -->|Push logs (OTLP HTTP/gRPC)| B1
-
-  %% Collector processing
   B1 -->|Receive log records| B2
   B2 -->|Batch & process| B3
   B3 -->|Push logs (HTTP POST)| C1
-
-  %% Loki storage
   C1 -->|Ingest logs| C2
   C2 -->|Buffer| C3
   C3 -->|Store| C4
   C4 -->|Index| C5
-
-  %% Grafana visualization
   C5 -->|Query logs| D1
   D1 -->|Label filter/search| D2
   D2 -->|Build dashboards| D3
-
-  %% Annotations (optional, can be removed if not supported)
-  classDef step fill:#f9f,stroke:#333,stroke-width:2px;
-  class A2,A3,A4,A5,B1,B2,B3,C1,C2,C3,C4,C5,D1,D2,D3 step;
 ```
 
 **Step-by-step explanation:**
