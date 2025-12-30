@@ -1,3 +1,4 @@
+
 # Processors for OpenTelemetry Collector
 # Processors transform, batch, or enrich telemetry data.
 # The batch processor is recommended for production use.
@@ -6,4 +7,25 @@
 processors:
   batch:
     timeout: 10s
-
+  attributes/loki:
+      actions:
+        - key: "service.name"
+          action: insert
+          from_attribute: "service.name"
+        - key: "severity"
+          action: insert
+          from_attribute: "severity"
+        - key: "container.name"
+          action: insert
+          from_attribute: "container.name"
+  attributes/log-labels:
+    actions:
+      - key: "service.name"
+        action: insert
+        from_attribute: "service.name"
+      - key: "severity"
+        action: insert
+        from_attribute: "severity"
+      - key: "container.name"
+        action: insert
+        from_attribute: "container.name"

@@ -6,9 +6,8 @@ service:
   pipelines:
     logs:
       receivers: [otlp]
-      processors: [batch]
+      processors: [attributes/log-labels, attributes/loki, batch]
       exporters: [loki]
-
     traces:
       receivers: [otlp]
       processors: [batch]

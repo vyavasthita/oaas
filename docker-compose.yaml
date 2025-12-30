@@ -97,10 +97,10 @@ services:
       - "5000:5000"
     container_name: backend
     environment:
-      OTEL_EXPORTER_LOGS_ENDPOINT: "http://otel-collector:14318/v1/logs"
-      OTEL_EXPORTER_TRACES_ENDPOINT: "http://otel-collector:14318/v1/traces"
+      OTEL_EXPORTER_LOGS_ENDPOINT: "http://otel-collector:4318/v1/logs"
+      OTEL_EXPORTER_TRACES_ENDPOINT: "http://otel-collector:4318/v1/traces"
       OTEL_SERVICE_NAME: "tic-tac-toe-backend"
-      RATE_LIMITED_LOG_INTERVAL_SECONDS: 60
+      RATE_LIMITED_LOG_INTERVAL_SECONDS: 2
     depends_on:
       database:
         condition: service_healthy
