@@ -47,7 +47,11 @@ class OpenTelemetryLoggingSetup:
 	def attach_to_python_logging(self):
 		"""
 		Attach the OpenTelemetry LoggingHandler to the root Python logger.
-		This ensures all standard logging calls are exported as OTel logs with resource labels.
+		This ensures all standard logging calls are exported as OTEL logs with resource labels.
+		
+		The LoggingHandler intercepts standard Python log records and
+		converts them to OpenTelemetry log records, 
+		which are then exported in the OTEL log format.
 		"""
 		handler = LoggingHandler(level=logging.INFO, logger_provider=self.logger_provider)
         
