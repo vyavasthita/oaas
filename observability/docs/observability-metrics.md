@@ -35,26 +35,7 @@ graph TD
 
 ---
 
-## Directory Structure
 
-```
-observability/
-  config/
-    observability_backends/
-      prometheus/
-        config/
-          prometheus.yaml
-    otel_collector/
-      config/
-        receivers.yaml
-        processors.yaml
-        exporters.yaml
-        pipelines.yaml
-  docs/
-    observability-metrics.md
-```
-
----
 
 ## Step-by-Step Integration
 
@@ -83,38 +64,7 @@ observability/
 
 ---
 
-## Example Prometheus Scrape Config
 
-```yaml
-global:
-  scrape_interval: 15s
-scrape_configs:
-  - job_name: 'otel-collector'
-    static_configs:
-      - targets: ['otel-collector:8889']
-```
-
----
-
-## Example FastAPI Metrics Setup
-
-```python
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
-from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-
-app = FastAPI()
-
-resource = Resource(attributes={SERVICE_NAME: "tic-tac-toe-backend"})
-exporter = OTLPMetricExporter(endpoint="http://otel-collector:4318/v1/metrics")
-reader = PeriodicExportingMetricReader(exporter)
-provider = MeterProvider(resource=resource, metric_readers=[reader])
-FastAPIInstrumentor().instrument_app(app, meter_provider=provider)
-```
-
----
 
 ## End-to-End Flow
 
