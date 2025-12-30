@@ -3,15 +3,16 @@
 
 ---
 
-**OTLP Endpoint:**
-`OTEL_COLLECTOR_OTLP_ENDPOINT = http://otel-collector:4318`
-
 
 This document explains the end-to-end flow of logging observability in our FastAPI backend, including the roles of OpenTelemetry Collector, Loki, Prometheus, and Grafana, and how configuration files drive the process.
 
 ---
 
+**OTLP Endpoint:**
 
+`OTEL_COLLECTOR_OTLP_ENDPOINT = http://otel-collector:4318`
+
+---
 
 ## Protocols Used in the Log Pipeline: OTLP vs REST
 
@@ -19,11 +20,11 @@ This document explains the end-to-end flow of logging observability in our FastA
 
 For each step in the log pipeline, the mechanism is as follows:
 
-| Step                              | Mechanism | Who initiates?         |
-|-----------------------------------|-----------|------------------------|
-| App → OTEL Collector              | Push      | App (OTLP exporter)    |
-| OTEL Collector → Loki             | Push      | Collector (Loki exporter) |
-| Loki Storage                      | Passive   | Loki only receives     |
+| Step                              | Mechanism | Who initiates?              |
+|-----------------------------------|-----------|-----------------------------|
+| App → OTEL Collector              | Push      | App (OTLP exporter)         |
+| OTEL Collector → Loki             | Push      | Collector (Loki exporter)   |
+| Loki Storage                      | Passive   | Loki only receives          |
 
 - **Push:** The sender initiates the connection and transmits data to the receiver.
 - **Pull:** The receiver requests or fetches data from the sender (not used in this pipeline).
@@ -156,8 +157,6 @@ In this project, Python logs are converted to this format by the OpenTelemetry L
       Collector-->>OTLPLogExporter: Ack/Response
   ```
 
-
-
 3. **Log Collection (OpenTelemetry Collector):**
   - The OpenTelemetry Collector is a standalone service (usually running as a Docker container) that acts as the central log pipeline in our observability stack.
   - Our backend's OpenTelemetry SDK exports logs to the OTLP endpoint (`OTEL_COLLECTOR_OTLP_ENDPOINT`). The Collector is configured to listen on this endpoint and passively receives incoming logs and other telemetry data.
@@ -200,65 +199,61 @@ In this project, Python logs are converted to this format by the OpenTelemetry L
 
   ## Consolidated Block Diagram: End-to-End Log Flow
 
-  Below is a detailed block diagram showing the complete journey of a log message from your FastAPI app, through the OpenTelemetry pipeline, to Loki storage and Grafana visualization. Each component and step is annotated for clarity.
+Below is a detailed block diagram showing the complete journey of a log message from your FastAPI app, through the OpenTelemetry pipeline, to Loki storage and Grafana visualization. Each component and step is annotated for clarity.
 
-  ```mermaid
-  flowchart TD
-    subgraph App[FastAPI Backend]
-      A1[Python logging.info / logging.error]
-      A2[OpenTelemetry LoggingHandler]
-      A3[LoggerProvider]
-      A4[BatchLogRecordProcessor]
-      A5[OTLPLogExporter]
-    end
+```mermaid
+flowchart TD
+  %% App (FastAPI Backend)
+  A1[Python logging.info / logging.error]
+  A2[OpenTelemetry LoggingHandler]
+  A3[LoggerProvider]
+  A4[BatchLogRecordProcessor]
+  A5[OTLPLogExporter]
 
-    subgraph Collector[OpenTelemetry Collector]
-      B1[OTLP Receiver (HTTP/gRPC)]
-      B2[Batch Processor]
-      B3[Loki Exporter]
-    end
+  %% Collector (OpenTelemetry Collector)
+  B1[OTLP Receiver (HTTP/gRPC)]
+  B2[Batch Processor]
+  B3[Loki Exporter]
 
-    subgraph Loki[Loki Backend]
-      C1[HTTP API Endpoint /loki/api/v1/push]
-      C2[WAL (Write-Ahead Log)]
-      C3[Chunks (Compressed Log Data)]
-      C4[Index (Label Metadata)]
-      C5[Mapped Storage: data/loki/]
-    end
+  %% Loki (Loki Backend)
+  C1[HTTP API Endpoint /loki/api/v1/push]
+  C2[WAL (Write-Ahead Log)]
+  C3[Chunks (Compressed Log Data)]
+  C4[Index (Label Metadata)]
+  C5[Mapped Storage: data/loki/]
 
-    subgraph Grafana[Grafana UI]
-      D1[Loki Data Source]
-      D2[Log Explorer]
-      D3[Dashboards]
-    end
+  %% Grafana (Grafana UI)
+  D1[Loki Data Source]
+  D2[Log Explorer]
+  D3[Dashboards]
 
-    %% App log flow
-    A1 -->|Log message| A2
-    A2 -->|Convert to OTel log record| A3
-    A3 -->|Buffer & enrich| A4
-    A4 -->|Batch & prepare| A5
-    A5 -->|Push logs (OTLP HTTP/gRPC)| B1
+  %% App log flow
+  A1 -->|Log message| A2
+  A2 -->|Convert to OTel log record| A3
+  A3 -->|Buffer & enrich| A4
+  A4 -->|Batch & prepare| A5
+  A5 -->|Push logs (OTLP HTTP/gRPC)| B1
 
-    %% Collector processing
-    B1 -->|Receive log records| B2
-    B2 -->|Batch & process| B3
-    B3 -->|Push logs (HTTP POST)| C1
+  %% Collector processing
+  B1 -->|Receive log records| B2
+  B2 -->|Batch & process| B3
+  B3 -->|Push logs (HTTP POST)| C1
 
-    %% Loki storage
-    C1 -->|Ingest logs| C2
-    C2 -->|Buffer| C3
-    C3 -->|Store| C4
-    C4 -->|Index| C5
+  %% Loki storage
+  C1 -->|Ingest logs| C2
+  C2 -->|Buffer| C3
+  C3 -->|Store| C4
+  C4 -->|Index| C5
 
-    %% Grafana visualization
-    C5 -->|Query logs| D1
-    D1 -->|Label filter/search| D2
-    D2 -->|Build dashboards| D3
+  %% Grafana visualization
+  C5 -->|Query logs| D1
+  D1 -->|Label filter/search| D2
+  D2 -->|Build dashboards| D3
 
-    %% Annotations
-    classDef step fill:#f9f,stroke:#333,stroke-width:2px;
-    class A2,A3,A4,A5,B1,B2,B3,C1,C2,C3,C4,C5,D1,D2,D3 step;
-  ```
+  %% Annotations (optional, can be removed if not supported)
+  classDef step fill:#f9f,stroke:#333,stroke-width:2px;
+  class A2,A3,A4,A5,B1,B2,B3,C1,C2,C3,C4,C5,D1,D2,D3 step;
+```
 
   **Step-by-step explanation:**
 

@@ -171,7 +171,7 @@ services:
     volumes:
       - ./observability/config/observability_backends/loki/config/loki-config.yaml:/etc/loki/local-config.yaml  # Mount config from new location
       - ./data/loki/wal:/wal  # Loki WAL directory must be writable
-      - ./data/loki/compactor:/loki/compactor  # Compactor working directory
+      - ./data/loki/compactor:/loki/compactor  # Compactor working directory (Loki compactor merges and optimizes index/chunk files for efficient storage and query)
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3100/ready"]
       interval: 10s
