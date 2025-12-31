@@ -218,7 +218,8 @@ services:
       - ./observability/config/otel_collector/config/otel-collector-config.generated.yaml:/etc/otelcol/otel-collector-config.yaml
     ports:
       - "14317:4317"  # OTLP gRPC (changed to avoid conflict with Tempo)
-      - "14318:4318"  # OTLP HTTP (changed to avoid conflict)
+      - "14318:4318"  # OTLP HTTP (changed to avoid conflict with Tempo)
+      - "8889:8889"  # Prometheus exporter port
     depends_on:
       loki:
         condition: service_healthy

@@ -41,4 +41,18 @@ scrape_configs:
     scrape_interval: 10s
     metrics_path: /metrics
     static_configs:
-      - targets: ['web:8000']
+      - targets: ['web:5000']
+
+  - job_name: 'otel-collector'
+    scrape_interval: 15s
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['otel-collector:8889']  # must match exporter endpoint
+
+# OTLP vs Prometheus in OTEL collector
+# Port 4318 is for OTLP HTTP, while Prometheus exporter uses a different port (8889). It is used by FastAPI app to expose metrics
+# Our endpoint OTEL_EXPORTER_PROMETHEUS_ENDPOINT http://otel-collector:4318/v1/metrics reflects this setup.
+# Prometheus does not scrape OTLP endpoints directly; it scrapes the Prometheus exporter endpoint instead.
+# Port 8889 is specifically for Prometheus exporter port in OTEL collector.
+# Prometheus scrapes metrics from the OTEL collector's Prometheus exporter, not the OTLP endpoint.
+# So, 4318 is for OTLP ingestion, while 8889 is for Prometheus scraping.

@@ -1,50 +1,31 @@
 [tool.poetry]
+
 name = "tic tac toe"
 version = "0.1.0"
 description = "Tic Tac Toe Backend"
 authors = ["Dilip Sharma"]
 readme = "README.md"
 
-
 [tool.poetry.dependencies]
 python = "~=3.13"  # Python runtime version
-
 pydantic-settings = "^2.7.1"  # Settings management using Pydantic
-
 poetry-plugin-export = "^1.9.0"  # Poetry plugin for exporting requirements.txt
-
-# OpenTelemetry API: Base interfaces for logs, metrics, traces
-opentelemetry-api = "^1.39.1"  # OTel API (required for all OTel features)
-
-# OpenTelemetry SDK: Core implementation for logs, metrics, traces
-opentelemetry-sdk = "^1.39.1"  # OTel SDK (required for all OTel features)
-
-# OTLP Exporter: Exports logs, metrics, and traces to the OTel Collector (HTTP/gRPC)
-opentelemetry-exporter-otlp = "^1.39.1"  # OTLP exporter (generic, HTTP/gRPC)
-
-# OTLP HTTP Exporter: Exports logs/traces via OTLP/HTTP (used for Python logs/traces)
-opentelemetry-exporter-otlp-proto-http = "^1.39.1"  # OTLP HTTP exporter (used for logs/traces)
-
-# Instrumentation base: Enables auto-instrumentation for supported libraries
-opentelemetry-instrumentation = "^0.60b1"  # OTel auto-instrumentation base
-
-# FastAPI Instrumentation: Auto-instruments FastAPI for tracing
-opentelemetry-instrumentation-fastapi = "^0.60b1"  # FastAPI tracing integration
-
-# OpenTelemetry Metrics Instrumentation
-prometheus-client = "^0.20.0"  # Prometheus Python client for custom metrics
-httpx = "^0.28.1"
-
 
 [tool.poetry.group.core.dependencies]
 fastapi = "^0.115.8"  # FastAPI web framework
 uvicorn = "^0.34.0"  # ASGI server for FastAPI
 
-
-[tool.poetry.group.observability.dependencies]
-# (Optional) You can use this group for extra observability tools or dev-only dependencies.
-# Main OTel dependencies should be in [tool.poetry.dependencies] for app-wide use.
-
+# Observability & OpenTelemetry core dependencies
+opentelemetry-api = "^1.39.1"  # OTel API (required for all OTel features)
+opentelemetry-sdk = "^1.39.1"  # OTel SDK (required for all OTel features)
+opentelemetry-exporter-otlp = "^1.39.1"  # OTLP exporter (generic, HTTP/gRPC)
+opentelemetry-exporter-otlp-proto-http = "^1.39.1"  # OTLP HTTP exporter (used for logs/traces)
+opentelemetry-instrumentation = "^0.60b1"  # OTel auto-instrumentation base
+opentelemetry-instrumentation-fastapi = "^0.60b1"  # FastAPI tracing integration
+opentelemetry-instrumentation-asgi = "^0.60b1"
+prometheus-client = "^0.20.0"  # Prometheus Python client for custom metrics
+httpx = "^0.28.1"
+opentelemetry-exporter-prometheus = "^0.60b1"
 
 [build-system]
 requires = ["poetry-core"]
