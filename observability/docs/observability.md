@@ -1,4 +1,3 @@
-
 ## Observability Implementation Steps
 
 This section summarizes the essential steps to enable observability (logging, metrics, tracing) in a Python/FastAPI project. Use this as a checklist to replicate observability in other repositories.
@@ -119,8 +118,6 @@ flowchart LR
             end
         end
 
-
- 
         subgraph Observability_Pipeline
             subgraph "Logging Pipeline"
                 collector["OpenTelemetry Collector"]
@@ -137,6 +134,11 @@ flowchart LR
                 prom_remote_write["Prometheus Remote Write"]
                 prom["Prometheus"]
                 prom_endpoint["Prometheus Endpoint\nhttp://prometheus:9090/api/v1/write"]
+            end
+            subgraph "Alerting Pipeline"
+                alertmanager["Alertmanager"]
+                notification_receiver["Notification Receiver\n(e.g., Email, Slack, Discord)"]
+                alertmanager_endpoint["Alertmanager Endpoint\nhttp://alertmanager:9093"]
             end
         end
 
@@ -173,6 +175,11 @@ flowchart LR
     tempo_endpoint --> pull_merge
     prom_endpoint --> pull_merge
     pull_merge(("<b>pull</b>")) --> grafana
+
+    %% Alerting flow
+    prom -- Alert --> alertmanager -- Notification --> notification_receiver
+    prom --> prom_endpoint
+    alertmanager --|push|--> alertmanager_endpoint
 ```
 
 ---
@@ -199,5 +206,59 @@ flowchart LR
 
 - **Prometheus Endpoint:**  
     Metrics are exposed by the Collector for Prometheus to scrape, or sent via remote_write to (e.g., `http://prometheus:9090/api/v1/write`).
+
+For more details, see the implementation checklist and config files in the `observability/config/` directory.
+
+---
+
+### 1.5 Alertmanager
+- Add Alertmanager for alert routing and notification management.
+- Mount alertmanager.yaml.template config and entrypoint script.
+- Expose required port (9093).
+- Default UI: [http://localhost:9093](http://localhost:9093)
+
+---
+
+## How Alerts Work in This Project
+
+- Prometheus evaluates alerting rules and sends alerts to Alertmanager.
+- Alertmanager groups, deduplicates, and routes alerts to receivers (Discord, email, etc.).
+- Discord notifications are sent via webhook.
+- The Alertmanager config uses a template file and shell script to securely inject the Discord webhook URL from an environment variable.
+
+---
+
+### Alerting Block Diagram
+```mermaid
+graph TD
+    App[App]
+    Prom[Prometheus]
+    AM[Alertmanager]
+    Discord[Discord Webhook]
+    App --> Prom
+    Prom -- Alert --> AM
+    AM -- Notification --> Discord
+```
+
+---
+
+### Protocols and Endpoints (Updated)
+
+- **OTLP Protocol:**  All logs, traces, and metrics are exported from the app to the OpenTelemetry Collector using the OTLP (OpenTelemetry Protocol) over HTTP.
+- **Loki Endpoint:**  The Collector forwards logs to Loki via its HTTP API endpoint (e.g., `http://loki:3100/loki/api/v1/push`).
+- **Tempo Endpoint:**  Traces are sent from the Collector to Tempo using the OTLP or Jaeger/Zipkin compatible endpoint (e.g., `http://tempo:4317`).
+- **Prometheus Endpoint:**  Metrics are exposed by the Collector for Prometheus to scrape, or sent via remote_write to (e.g., `http://prometheus:9090/api/v1/write`).
+- **Alertmanager Endpoint:**  Alerts are sent from Prometheus to Alertmanager (e.g., `http://alertmanager:9093`).
+
+---
+
+### Key Points (Updated)
+- All configuration is modular and separated for maintainability.
+- Data directories are kept separate from config for clean operation.
+- The flow is extensible: we can add metrics/traces/alerts by updating Collector config and backend setup.
+- Grafana provides a single pane of glass for all observability data.
+- Alertmanager uses a template config and shell script for secure environment variable injection (Discord webhook).
+
+---
 
 For more details, see the implementation checklist and config files in the `observability/config/` directory.

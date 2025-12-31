@@ -1,0 +1,12 @@
+groups:
+  - name: test-alerts
+    interval: 15s
+    rules:
+      - alert: ManualTestAlert
+        expr: (time() % 60) < bool 15   # Correct placement of 'bool'
+        for: 5s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Test Alert"
+          description: "This alert fires periodically for testing"

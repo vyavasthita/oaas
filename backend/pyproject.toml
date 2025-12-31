@@ -33,6 +33,7 @@ opentelemetry-instrumentation-fastapi = "^0.60b1"  # FastAPI tracing integration
 
 # OpenTelemetry Metrics Instrumentation
 prometheus-client = "^0.20.0"  # Prometheus Python client for custom metrics
+httpx = "^0.28.1"
 
 
 [tool.poetry.group.core.dependencies]

@@ -224,19 +224,34 @@ services:
         condition: service_healthy
     networks:
       - tic-tac-toe-network
-      
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./observability/config/observability_backends/alertmanager/config/alertmanager.yaml.template:/etc/alertmanager/alertmanager.yaml.template
+      - ./observability/config/observability_backends/alertmanager/scripts/alertmanager-entrypoint.sh:/etc/alertmanager/alertmanager-entrypoint.sh
+    environment:
+      - DISCORD_WEBHOOK_URL
+    entrypoint: ["/etc/alertmanager/alertmanager-entrypoint.sh"]
+    networks:
+      - tic-tac-toe-network
+
+
   prometheus:
     image: prom/prometheus
     container_name: prometheus
     ports:
       - 9090:9090
     volumes:
-      - ./observability/config/observability_backends/prometheus/config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./observability/config/observability_backends/prometheus/config/prometheus.yaml:/etc/prometheus/prometheus.yaml
+      - ./observability/config/observability_backends/prometheus/config/test-alerts.yaml:/etc/prometheus/rules/test-alerts.yaml
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--config.file=/etc/prometheus/prometheus.yaml'
     networks:
       - tic-tac-toe-network  
-
 
   grafana:
     image: grafana/grafana

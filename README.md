@@ -128,4 +128,22 @@ TBD
 
 ---
 
+## TODO: Set Discord Webhook for Alertmanager
+
+Before starting the stack, export your Discord webhook URL as an environment variable so Alertmanager can send alerts to Discord:
+
+```bash
+export DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/your_webhook_id/your_webhook_token"
+```
+
+Then start the stack as usual:
+
+```bash
+make all
+```
+
+This ensures the Alertmanager container receives the webhook URL securely from your host environment.
+
+---
+
 For details on observability flow, see [`observability/docs/observability-working.md`](observability/docs/observability-working.md).

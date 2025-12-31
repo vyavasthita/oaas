@@ -1,0 +1,11 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: discord-notifications
+  group_by: ['alertname', 'job']
+
+receivers:
+  - name: discord-notifications
+    discord_configs:
+      - webhook_url: "__DISCORD_WEBHOOK_URL__"
