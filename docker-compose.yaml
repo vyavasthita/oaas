@@ -35,7 +35,7 @@ services:
   #     - tic-tac-toe-network
 
   phpmyadmin:
-    image: phpmyadmin:latest
+    image: phpmyadmin:5.2.1
     container_name: phpmyadmin-admin
     restart: always
     environment:
@@ -241,7 +241,7 @@ services:
 
 
   prometheus:
-    image: prom/prometheus
+    image: prom/prometheus:v2.49.1
     container_name: prometheus
     ports:
       - 9090:9090
@@ -254,7 +254,7 @@ services:
       - tic-tac-toe-network  
 
   grafana:
-    image: grafana/grafana
+    image: grafana/grafana:10.4.2
     # image: grafana/otel-lgtm
     container_name: grafana
     ports:
