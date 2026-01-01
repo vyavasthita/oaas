@@ -267,6 +267,7 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
       - ./observability/config/grafana/provisioning:/etc/grafana/provisioning
+      - ./observability/config/grafana/dashboards:/var/lib/grafana/dashboards
     networks:
       - tic-tac-toe-network
 
