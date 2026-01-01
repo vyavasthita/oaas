@@ -54,7 +54,7 @@ This section summarizes the essential steps to enable observability (logging, me
 
 ---
 
-## How Observability Works in This Project
+### How Observability Works in This Project
 
 ---
 
@@ -72,12 +72,19 @@ This document explains the end-to-end flow of logging observability in our FastA
 
 ### Protocols Used in the Log Pipeline: OTLP vs REST
 
-### This file has been split for clarity and maintainability.
+##### This file has been split for clarity and maintainability.
 
 - For common OpenTelemetry and observability concepts, see: [observability-common.md](observability-common.md)
+
 - For logging-specific observability details, see: [observability-logs.md](observability-logs.md)
-- For metrics-specific observability details, see: [observability-metrics.md](observability-metrics.md)
+
 - For traces-specific observability details, see: [observability-traces.md](observability-traces.md)
+
+- For metrics-specific observability details, see: [observability-metrics.md](observability-metrics.md)
+
+- For alerting-specific observability details, see: [observability-alerting.md](observability-alerting.md)
+
+- For grafana-specific observability details, see: [observability-grafana.md](observability-grafana.md)
 
 ## Consolidated Observability Block Diagram
 
@@ -93,7 +100,22 @@ This document explains the end-to-end flow of logging observability in our FastA
 %% Metrics Pipeline: light teal
 
 flowchart LR
- 
+    %% Place FastAPI_Instrumentation left of Instrumentation
+    FastAPI_Instrumentation -.-> Instrumentation
+
+        subgraph FastAPI_Instrumentation["FastAPI Instrumentation"]
+            fastapi_app["FastAPI App"]
+            fastapi_logging["Logging Middleware / Instrumentation"]
+            fastapi_tracing["Tracing Middleware / Instrumentation"]
+            fastapi_metrics["Metrics Middleware / Instrumentation"]
+        end
+        fastapi_app --> fastapi_logging
+        fastapi_app --> fastapi_tracing
+        fastapi_app --> fastapi_metrics
+        fastapi_logging -- Logs --> logging_formatter
+        fastapi_tracing -- Traces --> trace_formatter
+        fastapi_metrics -- Metrics --> metrics_formatter
+
         subgraph Instrumentation
             app["App"]
 
@@ -180,6 +202,20 @@ flowchart LR
     prom -- Alert --> alertmanager -- Notification --> notification_receiver
     prom --> prom_endpoint
     alertmanager --|push|--> alertmanager_endpoint
+
+%% FastAPI Instrumentation Flows
+        subgraph FastAPI_Instrumentation["FastAPI Instrumentation"]
+            fastapi_app["FastAPI App"]
+            fastapi_logging["Logging Middleware / Instrumentation"]
+            fastapi_tracing["Tracing Middleware / Instrumentation"]
+            fastapi_metrics["Metrics Middleware / Instrumentation"]
+        end
+        fastapi_app --> fastapi_logging
+        fastapi_app --> fastapi_tracing
+        fastapi_app --> fastapi_metrics
+        fastapi_logging -- Logs --> logging_formatter
+        fastapi_tracing -- Traces --> trace_formatter
+        fastapi_metrics -- Metrics --> metrics_formatter
 ```
 
 ---
@@ -221,28 +257,11 @@ For more details, see the implementation checklist and config files in the `obse
 
 ## How Alerts Work in This Project
 
-- Prometheus evaluates alerting rules and sends alerts to Alertmanager.
-- Alertmanager groups, deduplicates, and routes alerts to receivers (Discord, email, etc.).
-- Discord notifications are sent via webhook.
-- The Alertmanager config uses a template file and shell script to securely inject the Discord webhook URL from an environment variable.
+See [observability-alerts.md](observability-alerts.md) for complete details on alerting, alert flow, configuration, and troubleshooting.
 
 ---
 
-### Alerting Block Diagram
-```mermaid
-graph TD
-    App[App]
-    Prom[Prometheus]
-    AM[Alertmanager]
-    Discord[Discord Webhook]
-    App --> Prom
-    Prom -- Alert --> AM
-    AM -- Notification --> Discord
-```
-
----
-
-### Protocols and Endpoints (Updated)
+### Protocols and Endpoints
 
 - **OTLP Protocol:**  All logs, traces, and metrics are exported from the app to the OpenTelemetry Collector using the OTLP (OpenTelemetry Protocol) over HTTP.
 - **Loki Endpoint:**  The Collector forwards logs to Loki via its HTTP API endpoint (e.g., `http://loki:3100/loki/api/v1/push`).

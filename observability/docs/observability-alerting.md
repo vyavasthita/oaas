@@ -1,60 +1,130 @@
-# Alerting Integration: Prometheus + Alertmanager + Discord
+
+# Observability: Alerts Integration (Prometheus & Alertmanager)
+
+This document describes how alerting is configured, triggered, and routed in the Tic-Tac-Toe FastAPI project using Prometheus and Alertmanager.
+
+---
 
 ## Overview
-Prometheus monitors your application and infrastructure, evaluating alerting rules. When a rule triggers, Prometheus sends the alert to Alertmanager. Alertmanager groups, deduplicates, and routes alerts to configured receivers (e.g., Discord, email, Slack).
 
-## How Alerting Works
-1. **Prometheus** evaluates alerting rules and sends alerts to Alertmanager.
-2. **Alertmanager** receives alerts, applies grouping/routing logic, and sends notifications to receivers.
-3. **Discord** receives notifications via webhook.
+Alerting provides real-time notifications about system health, errors, and performance issues. In this stack:
+- Prometheus evaluates alerting rules based on metrics it scrapes.
+- Alerts are sent to Alertmanager for grouping, deduplication, and routing.
+- Alertmanager sends notifications to receivers (e.g., Discord, email).
 
-### Mermaid Diagram: Alert Flow
+---
+
+## End-to-End Alerting Flow
+
+1. **Metrics Collection:** Prometheus scrapes metrics from the OpenTelemetry Collector.
+2. **Alert Evaluation:** Prometheus evaluates alerting rules defined in its configuration.
+3. **Alert Dispatch:** When a rule is triggered, Prometheus sends the alert to Alertmanager.
+4. **Alert Processing:** Alertmanager groups, deduplicates, and applies silencing/inhibition rules.
+5. **Notification Routing:** Alertmanager sends notifications to configured receivers (e.g., Discord webhook, email).
+
+---
+
+## Alerting Block Diagram
+
 ```mermaid
 graph TD
-    A[Prometheus] -- Alert --> B[Alertmanager]
-    B -- Notification --> C[Discord Webhook]
+        App[App]
+        Prom[Prometheus]
+        AM[Alertmanager]
+        Discord[Discord Webhook]
+        App --> Prom
+        Prom -- Alert --> AM
+        AM -- Notification --> Discord
 ```
 
-## Configuration Details
-- **Prometheus**: `alerting > alertmanagers` points to Alertmanager service.
-- **Alertmanager**: Uses a YAML config to define receivers and routing.
-- **Discord**: Configured as a webhook receiver in Alertmanager.
+---
 
-### Why Use a Template File and Shell Script?
+## Key Components & Config Files
+
+- **Prometheus:**
+    - `prometheus.yaml`: Main config, includes `scrape_configs` and `alerting` section.
+    - `test-alerts.yaml` (or similar): Contains alerting rules.
+- **Alertmanager:**
+    - `alertmanager.yaml.template`: Main config, defines receivers and routes.
+    - `alertmanager-entrypoint.sh`: Entrypoint script for injecting secrets (e.g., Discord webhook).
+
+---
+
+## How Alerts Work in This Project
+
+- Prometheus continuously evaluates alerting rules against scraped metrics.
+- When a rule fires, Prometheus sends the alert to Alertmanager (e.g., `http://alertmanager:9093`).
+- Alertmanager groups, deduplicates, and routes alerts to receivers (Discord, email, etc.).
+- Discord notifications are sent via webhook, with the webhook URL securely injected via environment variable and entrypoint script.
+
+---
+
+## Config Templating for Secrets
+
 Alertmanager does not natively support environment variable substitution in its YAML config. To securely inject secrets (like Discord webhook URLs) at runtime:
-- We use a template file (`alertmanager.yaml.template`) with a placeholder (`${DISCORD_WEBHOOK_URL}`).
+- Use a template file (`alertmanager.yaml.template`) with a placeholder (`${DISCORD_WEBHOOK_URL}`).
 - At container startup, a shell script runs `envsubst` to replace the placeholder with the actual value from the environment variable, generating the final config file.
 - This avoids hardcoding secrets and supports secure, dynamic configuration.
 
-#### Mermaid Diagram: Config Templating
 ```mermaid
 graph LR
-    T[alertmanager.yaml.template] -- envsubst + shell script --> F[alertmanager.yaml]
-    E[Environment Variable: DISCORD_WEBHOOK_URL] -- used by --> T
-    F -- used by --> A[Alertmanager]
+        T[alertmanager.yaml.template] -- envsubst + shell script --> F[alertmanager.yaml]
+        E[Environment Variable: DISCORD_WEBHOOK_URL] -- used by --> T
+        F -- used by --> A[Alertmanager]
 ```
 
-## Step-by-Step Setup
-1. **Create alertmanager.yaml.template** with `${DISCORD_WEBHOOK_URL}` placeholder.
-2. **Write a shell script** to run `envsubst` and start Alertmanager.
-3. **Set the environment variable** on the host before starting Docker Compose:
-   ```bash
-   export DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/your_webhook_id/your_webhook_token"
-   ```
-4. **Docker Compose** mounts the template and script, sets the entrypoint to the script.
-5. **On container startup**, the script generates the final config and launches Alertmanager.
+---
+
+## Example Alerting Rule (Conceptual)
+- Alert if HTTP error rate is high:
+    - Prometheus rule: If more than 5% of requests are 5xx in the last 5 minutes, fire an alert.
+- Alert if service is down:
+    - Prometheus rule: If a target is unreachable for more than 1 minute, fire an alert.
+
+---
+
+## Alertmanager Routing & Notification
+- Alertmanager can route alerts based on labels (e.g., severity, service).
+- Supports grouping, silencing, inhibition, and deduplication.
+- Receivers can be Discord, email, Slack, etc.
+- Uses a template config and shell script to securely inject secrets.
+
+---
+
+## Docker Compose & Container Changes
+- **Prometheus:**
+    - Mount `prometheus.yaml` and alert rules file.
+    - Expose port 9090.
+- **Alertmanager:**
+    - Mount `alertmanager.yaml.template` and entrypoint script.
+    - Expose port 9093.
+    - Set environment variable for Discord webhook.
+
+---
 
 ## Example Directory Structure
 ```
 observability/config/observability_backends/alertmanager/
-    config/
-        alertmanager.yaml.template
-    scripts/
-        alertmanager-entrypoint.sh
+        config/
+                alertmanager.yaml.template
+        scripts/
+                alertmanager-entrypoint.sh
 observability/docs/observability-alerting.md
 ```
 
+---
+
+## Troubleshooting
+- Ensure Prometheus and Alertmanager containers are healthy and ports are exposed.
+- Check Prometheus UI for alert status and firing alerts.
+- Check Alertmanager UI for alert routing and notification status.
+- Verify Discord (or other receiver) notifications are received.
+
+---
+
 ## References
-- [Prometheus Alerting docs](https://prometheus.io/docs/alerting/latest/alertmanager/)
+- [Prometheus Alerting](https://prometheus.io/docs/alerting/latest/overview/)
+- [Alertmanager Documentation](https://prometheus.io/docs/alerting/latest/alertmanager/)
+- [Grafana Alerting (optional)](https://grafana.com/docs/grafana/latest/alerting/)
 - [Alertmanager Configuration](https://prometheus.io/docs/alerting/latest/configuration/)
 - [Discord Webhook Setup](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks)
