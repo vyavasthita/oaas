@@ -20,12 +20,12 @@ Grafana is used to visualize metrics, logs, and traces from Prometheus, Loki, an
 
 ## Folder Structure
 ```
-observability/config/grafana/
+config/grafana/
     dashboards/                # Dashboard JSON files
     provisioning/
         datasources/           # Data source configs (YAML)
         dashboards/            # Dashboard provisioning configs (YAML)
-observability/docs/observability-grafana.md
+docs/grafana.md
 ```
 
 ---

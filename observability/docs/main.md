@@ -74,17 +74,17 @@ This document explains the end-to-end flow of logging observability in our FastA
 
 ##### This file has been split for clarity and maintainability.
 
-- For common OpenTelemetry and observability concepts, see: [observability-common.md](observability-common.md)
+For common OpenTelemetry and observability concepts, see: [common.md](common.md)
+For logging-specific observability details, see: [logs.md](logs.md)
+For traces-specific observability details, see: [traces.md](traces.md)
+For metrics-specific observability details, see: [metrics.md](metrics.md)
+For alerting-specific observability details, see: [alerting.md](alerting.md)
+For grafana-specific observability details, see: [grafana.md](grafana.md)
+- For metrics-specific observability details, see: [observability_metrics.md](observability_metrics.md)
 
-- For logging-specific observability details, see: [observability-logs.md](observability-logs.md)
+- For alerting-specific observability details, see: [observability_alerting.md](observability_alerting.md)
 
-- For traces-specific observability details, see: [observability-traces.md](observability-traces.md)
-
-- For metrics-specific observability details, see: [observability-metrics.md](observability-metrics.md)
-
-- For alerting-specific observability details, see: [observability-alerting.md](observability-alerting.md)
-
-- For grafana-specific observability details, see: [observability-grafana.md](observability-grafana.md)
+- For grafana-specific observability details, see: [observability_grafana.md](observability_grafana.md)
 
 ## Consolidated Observability Block Diagram
 
@@ -257,7 +257,7 @@ For more details, see the implementation checklist and config files in the `obse
 
 ## How Alerts Work in This Project
 
-See [observability-alerts.md](observability-alerts.md) for complete details on alerting, alert flow, configuration, and troubleshooting.
+See [alerting.md](alerting.md) for complete details on alerting, alert flow, configuration, and troubleshooting.
 
 ---
 

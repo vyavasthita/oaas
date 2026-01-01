@@ -2,7 +2,7 @@
 
 ---
 
-> For shared OpenTelemetry and observability concepts, see [observability-common.md](observability-common.md).
+> For shared OpenTelemetry and observability concepts, see [common.md](common.md).
 
 ---
 

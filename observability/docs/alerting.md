@@ -105,11 +105,11 @@ graph LR
 ## Example Directory Structure
 ```
 observability/config/observability_backends/alertmanager/
-        config/
-                alertmanager.yaml.template
-        scripts/
-                alertmanager-entrypoint.sh
-observability/docs/observability-alerting.md
+    config/
+        alertmanager.yaml.template
+    scripts/
+        alertmanager-entrypoint.sh
+observability/docs/alerting.md
 ```
 
 ---

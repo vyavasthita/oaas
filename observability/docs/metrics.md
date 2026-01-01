@@ -2,7 +2,7 @@
 
 ---
 
-> For shared OpenTelemetry and observability concepts, see [observability-common.md](observability-common.md).
+> For shared OpenTelemetry and observability concepts, see [common.md](common.md).
 
 ---
 
@@ -116,7 +116,7 @@ By default, application-level HTTP metrics (such as request count, duration, and
 
 > Adjust file names and paths as needed for your environment. These are the essential config files and container changes for end-to-end metrics observability.
 
-> For shared concepts and pipeline details, see [observability-common.md](observability-common.md).
+> For shared concepts and pipeline details, see [common.md](common.md).
 
 ## Middleware Role in Instrumentation
 - The custom `MetricsMiddleware` is responsible for:
