@@ -94,12 +94,26 @@ $ make clean
 ---
 
 ## Kubernetes (Planned)
-- Helm charts and manifests will be added for full K8s deployment
-- Modular config ready for Kubernetes in `observability/config/`
+### Kubernetes Access (Ingress)
+- All services are accessible via the ingress controller at:
+
+  | Service           | URL                                 |
+  |-------------------|-------------------------------------|
+  | PhpMyAdmin        | http://localhost:8080/phpmyadmin/   |
+  | FastAPI Docs      | http://localhost:5000/docs          |
+  | Loki              | http://localhost:8080/loki/         |
+  | Tempo             | http://localhost:8080/tempo/        |
+  | Prometheus        | http://localhost:8080/prometheus/   |
+  | Alertmanager      | http://localhost:8080/alertmanager/ |
+  | Grafana           | http://localhost:8080/grafana/      |
+
+- No need to update your host file. Port-forwarding is automated via the Makefile (`make kup`).
+- If you restart your cluster, rerun `make kup` to restore access.
+
 - To run with Minikube:
   ```bash
   minikube start --memory=4098
-  make helm
+  make kup
   ```
 
 ---
