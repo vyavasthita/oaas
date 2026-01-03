@@ -50,6 +50,40 @@ The Make targets call `docker compose` under the hood, so you can still run `doc
 
 ---
 
+## Service Onboarding Workflow
+
+Most backend repos only need a handful of steps to start emitting telemetry into OAAS.
+
+1. **Boot OAAS** – run `make up` in this repo so the collector/backends and the external Docker network exist.
+2. **Install Instrumentation Hub** – from your FastAPI service run one of the following:
+
+   ```bash
+   poetry add git+https://github.com/vyavasthita/instrumentation-hub.git#subdirectory=packages/python/fastapi
+   # or
+   pip install "instrumentation-hub-fastapi @ git+https://github.com/vyavasthita/instrumentation-hub.git@main#subdirectory=packages/python/fastapi"
+   ```
+
+3. **Wire the helper** – inside your FastAPI bootstrap file call `setup_fastapi_instrumentation(app)` and pass the OTLP endpoint env vars shown below.
+4. **Join the network** – attach your container to the `observability` network alias (details in the next section).
+5. **Verify in Grafana** – hit any endpoint in your service and confirm logs/metrics/traces appear in Grafana → Explore.
+
+```mermaid
+flowchart LR
+  Service((Any FastAPI Service)) -->|instrumentation-hub-fastapi| OTELSetup[setup_fastapi_instrumentation]
+  OTELSetup -->|OTLP logs/traces/metrics| Collector[oaas/otel-collector]
+  Collector --> Loki
+  Collector --> Tempo
+  Collector --> Prometheus
+  Prometheus --> Alertmanager --> Discord[(Discord / Receiver)]
+  Loki --> Grafana
+  Tempo --> Grafana
+  Prometheus --> Grafana
+```
+
+The instrumentation helper installs FastAPI middleware, OTLP exporters, and the Prometheus endpoint so every onboarded service behaves the same way.
+
+---
+
 ## Shared Docker Network
 
 OAAS exposes its services over an external Docker network so other repositories can connect without sharing compose files.
@@ -100,15 +134,16 @@ All services live on the shared Docker network, so containers from other repos c
 
 ## Integrating Another Repository
 
-1. **Join the network** – Either add the `observability` network in your compose file (see above) or run `docker network connect` after the fact.
-2. **Set OpenTelemetry env vars** in the app compose/service definition:
+1. **Join the shared network** – Either add the `observability` network in your compose file (see above) or run `docker network connect` after the fact.
+2. **Install instrumentation-hub-fastapi** (or the adapter for your framework) so the OTLP exporters, Prometheus reader, and HTTP metrics middleware match the stack expectations.
+3. **Set OpenTelemetry env vars** in the app compose/service definition:
    - `OTEL_EXPORTER_LOGS_ENDPOINT=http://otel-collector:4318/v1/logs`
    - `OTEL_EXPORTER_TRACES_ENDPOINT=http://otel-collector:4318/v1/traces`
    - `OTEL_EXPORTER_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics`
    - `OTEL_METRICS_EXPORTER=otlp`
    - `OTEL_SERVICE_NAME=<your-service>`
-3. **(Optional) Additional Prometheus scrape targets** – if you still need Prometheus to scrape a metrics endpoint directly, extend [observability/config/observability_backends/prometheus/config/prometheus.yaml](observability/config/observability_backends/prometheus/config/prometheus.yaml) with another `job_name` that points to your container on the shared network.
-4. **Dashboards & Alerts** – drop JSON dashboards inside [observability/config/grafana/dashboards](observability/config/grafana/dashboards) and alert rules into [observability/config/observability_backends/prometheus/config/test-alerts.yaml](observability/config/observability_backends/prometheus/config/test-alerts.yaml) (or a new file referenced from Prometheus).
+4. **(Optional) Additional Prometheus scrape targets** – if you still need Prometheus to scrape a metrics endpoint directly, extend [observability/config/observability_backends/prometheus/config/prometheus.yaml](observability/config/observability_backends/prometheus/config/prometheus.yaml) with another `job_name` that points to your container on the shared network.
+5. **Dashboards & Alerts** – drop JSON dashboards inside [observability/config/grafana/dashboards](observability/config/grafana/dashboards) and alert rules into [observability/config/observability_backends/prometheus/config/test-alerts.yaml](observability/config/observability_backends/prometheus/config/test-alerts.yaml) (or a new file referenced from Prometheus).
 
 ---
 

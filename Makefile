@@ -45,7 +45,7 @@ otel:
 	@./scripts/merge-otel-config.sh
 
 .PHONY: up
-up: network otel
+up: stop network otel
 	@echo "[up] docker compose -f $(COMPOSE_FILE) up -d --build --remove-orphans"
 	@docker compose -f $(COMPOSE_FILE) up -d --build --remove-orphans
 

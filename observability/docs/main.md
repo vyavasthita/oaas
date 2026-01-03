@@ -1,22 +1,50 @@
-## Observability Implementation Steps (OAAS)
+## Service Onboarding Playbook
 
-This repository now acts as “Observability as a Service”. The checklist below explains how any application—FastAPI, Flask, Spring Boot, Go, etc.—can plug into the shared stack without duplicating observability infrastructure.
-
----
-
-### 1. Bring Up the Stack
-
-1. `make up` – Creates the shared Docker network, regenerates the OpenTelemetry Collector config, and starts Loki, Tempo, Prometheus, Alertmanager, and Grafana.
-2. Confirm service health with `make ps` (or `docker compose ps`).
-3. Export `DISCORD_WEBHOOK_URL` before running `make up` so Alertmanager can route alerts.
-
-All persistent data lives in Docker volumes (`grafana_data`, `loki_data`, `loki_wal`, `tempo_data`). No host `data/` directory is required anymore.
+This repository acts as "Observability as a Service" for every backend that can speak OTLP. Follow the checklist below each time a new service needs telemetry.
 
 ---
 
-### 2. Join the Shared Network from Your App Repo
+### 1. Boot OAAS
 
-Add this snippet to the other repo’s `docker-compose.yaml`:
+1. Run `make up` to create the shared Docker network, regenerate the Collector config, and start Loki, Tempo, Prometheus, Alertmanager, and Grafana.
+2. Confirm container health with `make ps` (or `docker compose ps`).
+3. Export `DISCORD_WEBHOOK_URL` before running `make up` so Alertmanager can send notifications.
+
+All persistent data lives in Docker volumes (`grafana_data`, `loki_data`, `loki_wal`, `tempo_data`).
+
+---
+
+### 2. Install the Instrumentation Toolkit
+
+For FastAPI workloads install the reusable helper directly from GitHub until packages are published to PyPI:
+
+```bash
+poetry add git+https://github.com/vyavasthita/instrumentation-hub.git#subdirectory=packages/python/fastapi
+# or
+pip install "instrumentation-hub-fastapi @ git+https://github.com/vyavasthita/instrumentation-hub.git@main#subdirectory=packages/python/fastapi"
+```
+
+Other frameworks can follow the same pattern (pending adapters under `packages/python/django` and `packages/node/express`).
+
+---
+
+### 3. Wire the Helper into Your App
+
+```python
+from fastapi import FastAPI
+from instrumentation_hub_fastapi import setup_fastapi_instrumentation
+
+app = FastAPI()
+setup_fastapi_instrumentation(app)
+```
+
+Expose the OTLP endpoint env vars (`OTEL_EXPORTER_*`) in your compose/service definition. The helper attaches tracing, logging, Prometheus/OTLP metrics, and HTTP middleware in one call.
+
+---
+
+### 4. Join the Shared Docker Network
+
+Add the network declaration (or run `docker network connect`):
 
 ```yaml
 networks:
@@ -25,74 +53,41 @@ networks:
     name: ${OBSERVABILITY_NETWORK_NAME:-oaas-observability-net}
 ```
 
-Attach whichever services should emit telemetry:
-
-```yaml
-services:
-  api:
-    image: ghcr.io/example/api:latest
-    networks:
-      - observability
-    environment:
-      OTEL_SERVICE_NAME: api
-      OTEL_EXPORTER_LOGS_ENDPOINT: http://otel-collector:4318/v1/logs
-      OTEL_EXPORTER_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
-      OTEL_EXPORTER_METRICS_ENDPOINT: http://otel-collector:4318/v1/metrics
-      OTEL_METRICS_EXPORTER: otlp
-```
-
-Once both compose projects are running, Docker DNS makes `otel-collector`, `loki`, `tempo`, etc. resolvable from the application containers.
+Attach your container to both its local network and `observability`. Docker DNS then resolves `otel-collector`, `loki`, `tempo`, `prometheus`, and `grafana` from the application container.
 
 ---
 
-### 3. Instrument the Application
-
-1. Install the OpenTelemetry SDK + relevant auto-instrumentation packages for your language/framework.
-2. Configure log, trace, and metric exporters to point at the Collector endpoints shown above.
-3. (Optional) Keep Prometheus-style `/metrics` endpoints if you still want direct scraping. You can add dedicated scrape jobs in [observability/config/observability_backends/prometheus/config/prometheus.yaml](../config/observability_backends/prometheus/config/prometheus.yaml).
-
-The OTLP receiver is protocol-agnostic, so any OTEL-compatible SDK will work.
-
----
-
-### 4. Maintain the Collector Configuration
+### 5. Manage the Collector Configuration
 
 The Collector is assembled from modular YAML fragments stored in [observability/config/otel_collector/config](../config/otel_collector/config):
 
 | File | Purpose |
 |------|---------|
-| `receivers.yaml` | Defines OTLP ingestion (HTTP + gRPC). |
-| `processors.yaml` | Adds batching + attribute enrichment. |
-| `exporters.yaml` | Targets Loki, Tempo, and the Prometheus exporter. |
-| `pipelines.yaml` | Wires receivers → processors → exporters per signal. |
+| `receivers.yaml` | Defines OTLP HTTP + gRPC ingress.
+| `processors.yaml` | Adds batching and attribute enrichment.
+| `exporters.yaml` | Targets Loki, Tempo, and the Prometheus exporter.
+| `pipelines.yaml` | Wires receivers → processors → exporters per signal.
 
-Edit the fragments, run `make otel`, and restart the collector if you need extra processors or exporters. The generated file (`otel-collector-config.generated.yaml`) stays out of version control.
-
----
-
-### 5. Visualize & Alert
-
-- Grafana is pre-provisioned with Prometheus, Loki, and Tempo data sources. Drop JSON dashboards into [observability/config/grafana/dashboards](../config/grafana/dashboards) and they load automatically on startup.
-- Prometheus alert rules live in [observability/config/observability_backends/prometheus/config/test-alerts.yaml](../config/observability_backends/prometheus/config/test-alerts.yaml) (feel free to add more files and reference them in `prometheus.yaml`).
-- Alertmanager uses a templated config plus a small entrypoint script so secrets stay in environment variables.
-
-See the dedicated docs for deeper dives: [logs](logs.md), [metrics](metrics.md), [traces](traces.md), [grafana](grafana.md), [alerting](alerting.md), and [common OpenTelemetry concepts](common.md).
+Edit the fragments, run `make otel`, and restart the collector when changes land. The generated config stays out of version control.
 
 ---
 
-### 6. High-Level Flow
+### 6. Visualize & Alert
 
-1. Client services push OTLP telemetry over HTTP/gRPC to `otel-collector` on the shared network.
-2. The Collector enriches and fans out signals:
-   - Logs → Loki
-   - Traces → Tempo
-   - Metrics → Prometheus exporter (scraped by Prometheus)
-3. Prometheus ships alerts to Alertmanager, which forwards them to Discord (or any receiver you configure).
-4. Grafana provides the single UI for all three signals + alert status.
+- Grafana is pre-provisioned with Prometheus, Loki, and Tempo data sources. Drop JSON dashboards into [observability/config/grafana/dashboards](../config/grafana/dashboards) and they load automatically.
+- Prometheus alert rules belong in [observability/config/observability_backends/prometheus/config/test-alerts.yaml](../config/observability_backends/prometheus/config/test-alerts.yaml) (or another referenced file).
+- Alertmanager uses a templated config plus an entrypoint script so secrets live in environment variables.
+
+See the focused docs: [logs](logs.md), [metrics](metrics.md), [traces](traces.md), [grafana](grafana.md), [alerting](alerting.md), and [common concepts](common.md).
+
+---
+
+### 7. End-to-End Flow
 
 ```mermaid
 flowchart LR
-    app((Any App)) -->|OTLP| collector[OpenTelemetry Collector]
+    app((Any App)) -->|instrumentation-hub| helper[setup_fastapi_instrumentation]
+    helper -->|OTLP| collector[OpenTelemetry Collector]
     collector -->|logs| loki[Loki]
     collector -->|traces| tempo[Tempo]
     collector -->|metrics| prometheus[Prometheus]
@@ -105,11 +100,11 @@ flowchart LR
 
 ---
 
-### 7. Verification Checklist
+### 8. Verification Checklist
 
-1. `make ps` – ensure every service is running/healthy.
-2. From a client repo, send a test log/span/metric.
-3. Query Loki/Tempo/Prometheus in Grafana to confirm ingestion.
-4. Trigger a sample alert (see `test-alerts.yaml`) to verify Alertmanager + Discord wiring.
+1. `make ps` – ensure every OAAS container is healthy.
+2. From a client repo, send a test log/span/metric (invoke a FastAPI endpoint, emit a sample log, etc.).
+3. Query Loki/Tempo/Prometheus in Grafana → Explore to confirm ingestion.
+4. Trigger the sample alert in `test-alerts.yaml` to verify Alertmanager + Discord wiring.
 
-Once these are green, the OAAS stack is ready to service additional applications.
+Once these steps pass, the OAAS stack is ready for broader service onboarding.

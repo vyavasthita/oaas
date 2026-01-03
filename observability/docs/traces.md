@@ -6,6 +6,8 @@
 
 > FastAPI is referenced below purely as a sample workload. Any OTLP-capable service can follow the same flow.
 
+> Recommended: use `instrumentation-hub-fastapi` and call `setup_fastapi_instrumentation(app)` so traces/logs/metrics travel together with identical resource attributes.
+
 ---
 
 ## 1. Tracing Flow: From App to Grafana

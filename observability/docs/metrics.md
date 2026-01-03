@@ -6,6 +6,8 @@
 
 > FastAPI is used in examples below, but the same pattern works for any workload that can emit OTLP metrics.
 
+> Use the `instrumentation-hub-fastapi` helper to attach OTLP + Prometheus exports with a single call (`setup_fastapi_instrumentation(app)`).
+
 ---
 
 ## Overview

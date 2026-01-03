@@ -4,6 +4,18 @@
 
 This document covers the foundational concepts, protocols, and architecture patterns used for observability in this project, including OpenTelemetry, Collector, and backend integration. It is intended as a shared reference for all telemetry types (logs, metrics, traces).
 
+---
+
+## Shared Instrumentation Toolkit
+
+Every FastAPI service now reuses [instrumentation-hub](https://github.com/vyavasthita/instrumentation-hub) (specifically the `instrumentation-hub-fastapi` package) instead of duplicating OTLP wiring. The helper ships:
+
+- Cached Pydantic settings for `OTEL_*` environment variables.
+- Logging/tracing/metrics exporters preconfigured for OAAS.
+- Request metrics middleware plus the Prometheus exposition app.
+
+This keeps all services aligned with the same semantic conventions and drastically reduces the surface area of per-repo observability code. Future adapters (Django, Express, etc.) will follow the same pattern so this document applies across languages.
+
 > Context: the repository now exposes observability as a standalone service. Client applications connect over a shared Docker network and push OTLP telemetry into the stack.
 
 ---

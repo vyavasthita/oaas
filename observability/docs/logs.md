@@ -6,6 +6,8 @@
 
 > Examples in this document mention FastAPI because that is the sample workload we instrumented first. Every step applies to any application that can emit OTLP logs.
 
+> FastAPI services should call `setup_fastapi_instrumentation(app)` from the `instrumentation-hub-fastapi` package so logging, tracing, and metrics stay consistent across repos.
+
 ---
 
 ## 1. Logging Flow: From App to Grafana
