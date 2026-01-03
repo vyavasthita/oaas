@@ -125,154 +125,16 @@ flowchart LR
                 tracer_provider["TracerProvider"]
                 traces["Traces"]
             end
+## Observability Implementation Steps (Mirror)
 
-            dummy_gap[" "]
+This file now mirrors the canonical guide in [main.md](main.md). Keeping both files avoids breaking existing links, but all new content lives in `main.md`.
 
-            subgraph "Metrics Instrumentation"
-                metrics_formatter["MetricsFormatter"]
-                meter_provider["MeterProvider"]
-                metrics["Metrics"]
-            end
-        end
+### TL;DR
 
-        subgraph Observability_Pipeline
-            subgraph "Logging Pipeline"
+1. Run `make up` to create the shared Docker network and boot the observability stack.
+2. Attach any backend to that network and send OTLP telemetry to `otel-collector`.
+3. Manage Collector config via the modular YAML files in `observability/config/otel_collector/config/`.
+4. Visualize and alert through Grafana/Prometheus/Alertmanager.
+
+For diagrams, configuration tips, and troubleshooting, see [main.md](main.md) plus the focused docs referenced there.
                 collector["OpenTelemetry Collector"]
-                loki_wal["Loki WAL"]
-                loki["Loki"]
-                loki_endpoint["Loki Endpoint\nhttp://loki:3100/loki/api/v1/push"]
-            end
-            subgraph "Tracing Pipeline"
-                tempo_wal["Tempo WAL"]
-                tempo["Tempo"]
-                tempo_endpoint["Tempo Endpoint\nhttp://tempo:4317"]
-            end
-            subgraph "Metrics Pipeline"
-                prom_remote_write["Prometheus Remote Write"]
-                prom["Prometheus"]
-                prom_endpoint["Prometheus Endpoint\nhttp://prometheus:9090/api/v1/write"]
-            end
-            subgraph "Alerting Pipeline"
-                alertmanager["Alertmanager"]
-                notification_receiver["Notification Receiver\n(e.g., Email, Slack, Discord)"]
-                alertmanager_endpoint["Alertmanager Endpoint\nhttp://alertmanager:9093"]
-            end
-        end
-
- 
-        subgraph Visualization
-            grafana["Grafana"]
-        end
-
-    %% Style for the new Visualization block
-    style Visualization fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px
-
-
-
-%% Style parent blocks
-    style Instrumentation fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
-    style Observability_Pipeline fill:#ececec,stroke:#757575,stroke-width:2px
-    style Visualization fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px
-
-    %% Force horizontal alignment of main blocks
-    Instrumentation -.-> Observability_Pipeline -.-> Visualization
-
-    %% Logging, Tracing, Metrics Flows (merged OTLP)
-    app --> logging_formatter --> logging_provider --> logs
-    app --> trace_formatter --> tracer_provider --> traces
-    app --> metrics_formatter --> meter_provider --> metrics
-    logs --|push|--> otlp_merge
-    traces --|push|--> otlp_merge
-    metrics --|push|--> otlp_merge
-    otlp_merge(("<b>OTLP</b>")) --|push|--> collector
-    collector --> loki_wal --> loki --|push|--> loki_endpoint
-    collector --> tempo_wal --> tempo --|push|--> tempo_endpoint
-    collector --> prom_remote_write --> prom --|push|--> prom_endpoint
-    loki_endpoint --> pull_merge
-    tempo_endpoint --> pull_merge
-    prom_endpoint --> pull_merge
-    pull_merge(("<b>pull</b>")) --> grafana
-
-    %% Alerting flow
-    prom -- Alert --> alertmanager -- Notification --> notification_receiver
-    prom --> prom_endpoint
-    alertmanager --|push|--> alertmanager_endpoint
-
-%% FastAPI Instrumentation Flows
-        subgraph FastAPI_Instrumentation["FastAPI Instrumentation"]
-            fastapi_app["FastAPI App"]
-            fastapi_logging["Logging Middleware / Instrumentation"]
-            fastapi_tracing["Tracing Middleware / Instrumentation"]
-            fastapi_metrics["Metrics Middleware / Instrumentation"]
-        end
-        fastapi_app --> fastapi_logging
-        fastapi_app --> fastapi_tracing
-        fastapi_app --> fastapi_metrics
-        fastapi_logging -- Logs --> logging_formatter
-        fastapi_tracing -- Traces --> trace_formatter
-        fastapi_metrics -- Metrics --> metrics_formatter
-```
-
----
-
-### Key Points
-
-- All configuration is modular and separated for maintainability.
-- Data directories are kept separate from config for clean operation.
-- The flow is extensible: we can add metrics/traces by updating Collector config and backend setup.
-- Grafana provides a single pane of glass for all observability data.
-
----
-
-### Protocols and Endpoints
-
-- **OTLP Protocol:**  
-    All logs, traces, and metrics are exported from the app to the OpenTelemetry Collector using the OTLP (OpenTelemetry Protocol) over HTTP.
-
-- **Loki Endpoint:**  
-    The Collector forwards logs to Loki via its HTTP API endpoint (e.g., `http://loki:3100/loki/api/v1/push`).
-
-- **Tempo Endpoint:**  
-    Traces are sent from the Collector to Tempo using the OTLP or Jaeger/Zipkin compatible endpoint (e.g., `http://tempo:4317`).
-
-- **Prometheus Endpoint:**  
-    Metrics are exposed by the Collector for Prometheus to scrape, or sent via remote_write to (e.g., `http://prometheus:9090/api/v1/write`).
-
-For more details, see the implementation checklist and config files in the `observability/config/` directory.
-
----
-
-### 1.5 Alertmanager
-- Add Alertmanager for alert routing and notification management.
-- Mount alertmanager.yaml.template config and entrypoint script.
-- Expose required port (9093).
-- Default UI: [http://localhost:9093](http://localhost:9093)
-
----
-
-## How Alerts Work in This Project
-
-See [alerting.md](alerting.md) for complete details on alerting, alert flow, configuration, and troubleshooting.
-
----
-
-### Protocols and Endpoints
-
-- **OTLP Protocol:**  All logs, traces, and metrics are exported from the app to the OpenTelemetry Collector using the OTLP (OpenTelemetry Protocol) over HTTP.
-- **Loki Endpoint:**  The Collector forwards logs to Loki via its HTTP API endpoint (e.g., `http://loki:3100/loki/api/v1/push`).
-- **Tempo Endpoint:**  Traces are sent from the Collector to Tempo using the OTLP or Jaeger/Zipkin compatible endpoint (e.g., `http://tempo:4317`).
-- **Prometheus Endpoint:**  Metrics are exposed by the Collector for Prometheus to scrape, or sent via remote_write to (e.g., `http://prometheus:9090/api/v1/write`).
-- **Alertmanager Endpoint:**  Alerts are sent from Prometheus to Alertmanager (e.g., `http://alertmanager:9093`).
-
----
-
-### Key Points (Updated)
-- All configuration is modular and separated for maintainability.
-- Data directories are kept separate from config for clean operation.
-- The flow is extensible: we can add metrics/traces/alerts by updating Collector config and backend setup.
-- Grafana provides a single pane of glass for all observability data.
-- Alertmanager uses a template config and shell script for secure environment variable injection (Discord webhook).
-
----
-
-For more details, see the implementation checklist and config files in the `observability/config/` directory.

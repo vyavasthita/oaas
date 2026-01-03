@@ -1,295 +1,125 @@
 services:
-  database:
-    image: mysql:8.0.29
-    container_name: database
-    ports:
-      - "3308:3306"
-    environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
-      timeout: 3s
-      retries: 5
-    volumes:
-      - database_data:/var/lib/mysql
-    networks:
-      - tic-tac-toe-network
-  
-  # database:
-  #   image: TBD
-  #   restart: unless-stopped
-  #   container_name: ttt-xtradb
-  #   ports:
-  #     - "3312:3306"
-  #   volumes:
-  #      - ./sql:/var/lib/sql/
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: temp123
-  #     EXTUSER: "ttt:some_password"
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "mysql -uroot -ptemp123 -e 'select 1'"]
-  #     start_period: 5s
-  #     interval: 5s
-  #     retries: 30
-  #   networks:
-  #     - tic-tac-toe-network
-
-  phpmyadmin:
-    image: phpmyadmin:5.2.1
-    container_name: phpmyadmin-admin
-    restart: always
-    environment:
-      PMA_HOST: database
-      PMA_USER: root
-      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-    ports:
-      - "8081:80"
-    depends_on:
-      database:
-        condition: service_healthy
-    networks:
-      - tic-tac-toe-network
-
-  # db-migration:
-  #   image: TBD
-  #   container_name: db-migration
-  #   depends_on:
-  #     database:
-  #       condition: service_healthy
-  #   environment:
-  #     MYSQL_USERNAME: root
-  #     MYSQL_PASSWORD: temp123
-  #     MYSQL_HOST: database
-  #     CHANGELOG_FILE: /liquibase/changelog/test_data/sql/local_dev_changelog.yml
-  #     LIQUIBASE_COMMAND_URL: jdbc:mysql://databaseb:3306/tictactoe?allowPublicKeyRetrieval=true&useSSL=true&createDatabaseIfNotExist=true
-  #     OPERATION: update
-  #     MYSQL_DATABASE: tictactoe
-  #     LIQUIBASE_LOG_LEVEL: DEBUG
-  #   volumes: 
-  #     - ../backend/changelog:/liquibase/changelog
-  #   networks:
-  #     - tic-tac-toe-network
-
-  mysql-workbench:
-    image: lspipepr/mysql-workbench:version-8.0.28
-    container_name: mysql-workbench
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Etc/UTC
-    ports:
-      - 3000:3000
-      - 3001:3001
-    cap_add:
-      - IPC_LOCK
-    restart: unless-stopped
-    depends_on:
-      database:
-        condition: service_healthy
-    networks:
-      - tic-tac-toe-network
-
-  backend:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    ports:
-      - "5000:5000"
-    container_name: backend
-    environment:
-      OTEL_EXPORTER_LOGS_ENDPOINT: "http://otel-collector:4318/v1/logs"
-      OTEL_EXPORTER_TRACES_ENDPOINT: "http://otel-collector:4318/v1/traces"
-      OTEL_EXPORTER_METRICS_ENDPOINT: "http://otel-collector:4318/v1/metrics"
-      OTEL_METRICS_EXPORTER: "otlp"
-      OTEL_SERVICE_NAME: "tic-tac-toe-backend"
-      RATE_LIMITED_LOG_INTERVAL_SECONDS: 2
-    depends_on:
-      database:
-        condition: service_healthy
-    healthcheck:
-      test: curl --fail http://localhost:5000/health || exit 1
-      start_period: 10s
-      interval: 20s
-    networks:
-      - tic-tac-toe-network
-
-# Liquibase:
-#     # Image to be pulled from Docker Hub
-#     image: liquibase/liquibase:4.9.1
-#     # Name of the container
-#     container_name: Liquibase_container
-#     # Setting depends_on to PostgreSQL container to wait till the service is ready to accept connections
-#     depends_on:
-#       PostgreSQL:
-#         condition: service_healthy
-#     # Volume to add the liquibase collection of scripts
-#     volumes:
-#       - ./database/sql/liquibase/changeLog/:/liquibase/changelog/
-#     # Command to run the liquibase update service
-#     command: --defaults-file=/liquibase/changelog/liquibase.properties update
-
-# liquibase:
-#     container_name: liquibase
-#     build: 
-#         context: ./liquibase
-#         dockerfile: Dockerfile
-#     environment: 
-#         - LIQUIBASE_PROJECT_DIR=${LIQUIBASE_PROJECT_DIR}
-#         - LIQUIBASE_DATABASE_DRIVER=${LIQUIBASE_DATABASE_DRIVER}
-#         - LIQUIBASE_DATABASE_URL=jdbc:mysql://${LIQUIBASE_DATABASE_HOST}:3306/${MYSQL_DATABASE}
-#         - LIQUIBASE_DATABASE_USERNAME=${MYSQL_USER}
-#         - LIQUIBASE_DATABASE_PASSWORD=${MYSQL_PASSWORD}
-#     depends_on:
-#         - mysql
-#     links: 
-#         - mysql
-#     networks:
-#         - code-network
-
-# mysql:
-#     container_name: mysql
-#     user: "1000:50"
-#     restart: always
-#     build:
-#         context: ./mysql
-#         dockerfile: Dockerfile
-#     command: "--innodb-use-native-aio=0 --innodb-fast-shutdown=0"
-#     ports:
-#         - "${MYSQL_PORT}:3306"
-#     volumes:
-#         - ${MYSQL_DATA}:/var/lib/mysql
-#         - ./mysql/run.sh:/stack/localdb/run.sh:rw
-#     environment:
-#         - MYSQL_DATABASE=${MYSQL_DATABASE}
-#         - MYSQL_USER=${MYSQL_USER}
-#         - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-#         - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-#     networks:
-#         - code-network
-      
-
-  # Loki: log aggregation service for observability
   loki:
     image: grafana/loki:2.9.4
     container_name: loki
-    ports:
-      - "3100:3100"  # Expose Loki's HTTP API
+    user: "0"
+    restart: unless-stopped
     command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
     volumes:
-      - ./observability/config/observability_backends/loki/config/loki-config.yaml:/etc/loki/local-config.yaml  # Mount config from new location
-      - ./data/loki/wal:/wal  # Loki WAL directory must be writable
-      - ./data/loki/compactor:/loki/compactor  # Compactor working directory (Loki compactor merges and optimizes index/chunk files for efficient storage and query)
+      - ./observability/config/observability_backends/loki/config/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+      - loki_wal:/wal
     healthcheck:
-        test: ["CMD", "wget", "--spider", "-q", "http://localhost:3100/ready"]
-        interval: 10s
-        timeout: 5s
-        retries: 10
-
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3100/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
-      - tic-tac-toe-network
+      - observability
 
-  # Tempo: distributed tracing backend for observability
   tempo:
     image: grafana/tempo:2.5.0
     container_name: tempo
+    restart: unless-stopped
     command: ["-config.file=/etc/tempo/tempo.yaml"]
     ports:
-      - "3200:3200"   # Tempo HTTP API (query frontend)
-      - "4317:4317"   # OTLP gRPC (traces)
-      - "4318:4318"   # OTLP HTTP (traces)
+      - "3200:3200"
     volumes:
-      - ./observability/config/observability_backends/tempo/config/tempo.yaml:/etc/tempo/tempo.yaml
-      - ./data/tempo:/var/tempo
+      - ./observability/config/observability_backends/tempo/config/tempo.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo_data:/var/tempo
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3200/ready"]
       interval: 10s
       timeout: 5s
       retries: 10
     networks:
-      - tic-tac-toe-network
-      
-  # OpenTelemetry Collector for log ingestion and export to Loki
+      - observability
+
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.95.0
     container_name: otel-collector
+    restart: unless-stopped
     command: ["--config=/etc/otelcol/otel-collector-config.yaml"]
     volumes:
-      # Mount the merged config file (see otel-collector-config.yaml for merge instructions)
-      - ./observability/config/otel_collector/config/otel-collector-config.generated.yaml:/etc/otelcol/otel-collector-config.yaml
+      - ./observability/config/otel_collector/config/otel-collector-config.generated.yaml:/etc/otelcol/otel-collector-config.yaml:ro
     ports:
-      - "14317:4317"  # OTLP gRPC (changed to avoid conflict with Tempo)
-      - "14318:4318"  # OTLP HTTP (changed to avoid conflict with Tempo)
-      - "8889:8889"  # Prometheus exporter port
+      - "4317:4317"
+      - "4318:4318"
+      - "8889:8889"
     depends_on:
       loki:
         condition: service_healthy
+      tempo:
+        condition: service_started
     networks:
-      - tic-tac-toe-network
+      - observability
 
   alertmanager:
     image: prom/alertmanager:v0.27.0
     container_name: alertmanager
+    restart: unless-stopped
     ports:
       - "9093:9093"
-    volumes:
-      - ./observability/config/observability_backends/alertmanager/config/alertmanager.yaml.template:/etc/alertmanager/alertmanager.yaml.template
-      - ./observability/config/observability_backends/alertmanager/scripts/alertmanager-entrypoint.sh:/etc/alertmanager/alertmanager-entrypoint.sh
     environment:
       - DISCORD_WEBHOOK_URL
+    volumes:
+      - ./observability/config/observability_backends/alertmanager/config/alertmanager.yaml.template:/etc/alertmanager/alertmanager.yaml.template:ro
+      - ./observability/config/observability_backends/alertmanager/scripts/alertmanager-entrypoint.sh:/etc/alertmanager/alertmanager-entrypoint.sh:ro
     entrypoint: ["/etc/alertmanager/alertmanager-entrypoint.sh"]
     networks:
-      - tic-tac-toe-network
-
+      - observability
 
   prometheus:
     image: prom/prometheus:v2.49.1
     container_name: prometheus
+    restart: unless-stopped
     ports:
-      - 9090:9090
-    volumes:
-      - ./observability/config/observability_backends/prometheus/config/prometheus.yaml:/etc/prometheus/prometheus.yaml
-      - ./observability/config/observability_backends/prometheus/config/test-alerts.yaml:/etc/prometheus/rules/test-alerts.yaml
+      - "9090:9090"
     command:
       - '--config.file=/etc/prometheus/prometheus.yaml'
+    volumes:
+      - ./observability/config/observability_backends/prometheus/config/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+      - ./observability/config/observability_backends/prometheus/config/test-alerts.yaml:/etc/prometheus/rules/test-alerts.yaml:ro
+    depends_on:
+      otel-collector:
+        condition: service_started
+      alertmanager:
+        condition: service_started
     networks:
-      - tic-tac-toe-network  
+      - observability
 
   grafana:
     image: grafana/grafana:10.4.2
-    # image: grafana/otel-lgtm
     container_name: grafana
-    ports:
-      - 8080:3000
     restart: unless-stopped
+    ports:
+      - "8080:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./observability/config/grafana/provisioning:/etc/grafana/provisioning
-      - ./observability/config/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./observability/config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/config/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      loki:
+        condition: service_healthy
+      prometheus:
+        condition: service_started
+      tempo:
+        condition: service_started
     networks:
-      - tic-tac-toe-network
+      - observability
 
 volumes:
-  database_data:
-    driver: local
-    driver_opts:
-      o: bind
-      type: none
-      device: ./data/database/mysql
-  # prometheus_data:
-  #   driver: local
-  #   driver_opts:
-  #     o: bind
-  #     type: none
-  #     device: ./data/prometheus
   grafana_data:
-    driver: local
-    driver_opts:
-      o: bind
-      type: none
-      device: ./data/grafana
+  loki_data:
+  loki_wal:
+  tempo_data:
 
 networks:
-  tic-tac-toe-network: {}
+  observability:
+    external: true
+    name: ${OBSERVABILITY_NETWORK_NAME:-oaas-observability-net}

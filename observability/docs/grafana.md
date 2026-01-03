@@ -1,6 +1,6 @@
 # Observability: Grafana Integration & Dashboard Management
 
-This document describes how Grafana is configured, provisioned, and used for observability in the Tic-Tac-Toe FastAPI project.
+This document describes how Grafana is configured, provisioned, and used inside the Observability-as-a-Service stack.
 
 ---
 

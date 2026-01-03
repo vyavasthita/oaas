@@ -1,18 +1,10 @@
 # Receivers for OpenTelemetry Collector
-# Receivers define how telemetry data is ingested into the Collector.
-# Here, we enable OTLP (gRPC and HTTP) for logs from applications.
-# Defines how the Collector receives logs. OTLP (OpenTelemetry Protocol) is enabled for both gRPC and HTTP, so our app can send logs using either protocol.
+# All client services push telemetry via OTLP (HTTP or gRPC), so the stack stays
+# agnostic of their runtime or framework.
 receivers:
   otlp:
     protocols:
       grpc:
       http:
 
-  prometheus:
-    config:
-      scrape_configs:
-        - job_name: 'backend'
-          static_configs:
-            - targets: ['backend:9464']
-
-# Enable OTLP for traces (already covers logs and traces)
+# Enable OTLP for logs, metrics, and traces coming from any connected application.

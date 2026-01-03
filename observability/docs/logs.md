@@ -4,6 +4,8 @@
 
 > For shared OpenTelemetry and observability concepts, see [common.md](common.md).
 
+> Examples in this document mention FastAPI because that is the sample workload we instrumented first. Every step applies to any application that can emit OTLP logs.
+
 ---
 
 ## 1. Logging Flow: From App to Grafana
@@ -115,9 +117,9 @@ In this project, Python logs are converted to this format by the OpenTelemetry L
     - **WAL (Write-Ahead Log):** Temporary buffer for incoming logs before they are processed and chunked.
     - **Chunks:** Compressed log data stored for efficient querying and retrieval.
     - **Index:** Metadata for fast searching and filtering by labels.
-  - In our setup, Loki's storage is mapped to the `data/loki/` directory (e.g., `../data/loki/wal` for WAL files). This directory contains all persistent log data and indexes.
+  - In this repo, Loki persists everything inside Docker volumes (`loki_data` and `loki_wal`). No host `data/` folder is needed anymore.
   - Loki does not "call" the Collector or any endpoint to fetch logs; it passively receives logs pushed to it by the Collector and other clients.
-  - In summary: The OTEL Collector pushes logs to Loki's API endpoint, and Loki stores, indexes, and makes them available for querying and visualization in Grafana. All log data is stored in the mapped `data/loki/` directory on disk.
+  - In summary: The OTEL Collector pushes logs to Loki's API endpoint, and Loki stores, indexes, and makes them available for querying and visualization in Grafana. All log data lives inside Docker-managed volumes so it survives container restarts.
 
 5. **Log Visualization (Grafana):**
    - Grafana is configured to use Loki as a data source (via provisioning files in `observability/config/grafana/provisioning/datasources/`).
@@ -178,7 +180,7 @@ flowchart TD
   - Collector's OTLP receiver ingests logs, applies batch processing, and uses the Loki exporter to push logs to Loki's HTTP API endpoint.
 4. **Loki Storage:**
   - Loki receives logs via HTTP POST, buffers them in WAL, compresses into chunks, and indexes by labels.
-  - All persistent log data is stored in the mapped `data/loki/` directory.
+  - All persistent log data is stored in the Docker volumes declared in `docker-compose.yaml` (`loki_data`, `loki_wal`).
 5. **Grafana Visualization:**
   - Grafana is provisioned to use Loki as a data source.
   - Logs can be explored, filtered by labels, and visualized in dashboards for monitoring and troubleshooting.

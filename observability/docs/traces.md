@@ -4,6 +4,8 @@
 
 > For shared OpenTelemetry and observability concepts, see [common.md](common.md).
 
+> FastAPI is referenced below purely as a sample workload. Any OTLP-capable service can follow the same flow.
+
 ---
 
 ## 1. Tracing Flow: From App to Grafana

@@ -4,6 +4,8 @@
 
 > For shared OpenTelemetry and observability concepts, see [common.md](common.md).
 
+> FastAPI is used in examples below, but the same pattern works for any workload that can emit OTLP metrics.
+
 ---
 
 ## Overview
@@ -31,7 +33,7 @@ graph TD
 ## Step-by-Step Integration
 
 ### 1. Docker Compose
-- Add Prometheus service with config and data mounts.
+- Add the Prometheus service with config mounts (data lives in Docker volumes by default).
 - Expose port 9090 for Prometheus UI.
 
 ### 2. Backend Instrumentation
@@ -70,7 +72,7 @@ sequenceDiagram
 
 ---
 
-## Custom Metrics Instrumentation in FastAPI
+## Custom Metrics Instrumentation (FastAPI example)
 
 ### Why Instrument HTTP Metrics?
 By default, application-level HTTP metrics (such as request count, duration, and error rates) are not exposed to Prometheus. To enable observability for these, you must instrument your FastAPI app to collect and export them.

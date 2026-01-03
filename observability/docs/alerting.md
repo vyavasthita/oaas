@@ -1,7 +1,7 @@
 
 # Observability: Alerts Integration (Prometheus & Alertmanager)
 
-This document describes how alerting is configured, triggered, and routed in the Tic-Tac-Toe FastAPI project using Prometheus and Alertmanager.
+This document describes how alerting is configured, triggered, and routed inside the Observability-as-a-Service stack using Prometheus and Alertmanager.
 
 ---
 

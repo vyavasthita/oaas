@@ -1,143 +1,157 @@
-# Tic Tac Toe Backend & Observability
+# Observability as a Service (OAAS)
 
-A modular FastAPI backend for Tic Tac Toe (N players and bot) with full observability using Docker Compose and future Kubernetes support.
-
----
-
-## About the Project
-- Play Tic Tac Toe with multiple players and a bot
-- Built with Python and FastAPI
-- Includes MySQL 8, MySQL Workbench, PhpMyAdmin
-- Observability: OpenTelemetry Collector, Loki, Prometheus, Grafana
+This repository now hosts a standalone observability stack (Loki + Tempo + Prometheus + Alertmanager + Grafana + OpenTelemetry Collector). No application or database code lives here anymore—the goal is to expose observability capabilities that any backend can reuse over a shared Docker network.
 
 ---
 
-## System Environment
+## Stack Overview
 
-| Tool/Service              | Version/Info                |
-|--------------------------|-----------------------------|
-| Python                   | 3.13.1                      |
-| Docker                   | 27.4.0                      |
-| Docker Compose           | v2.31.0-desktop.2           |
-| GNU Make                 | 3.81                        |
-| MySQL                    | 8.0.29                      |
-| PhpMyAdmin               | 5.2.1                       |
-| MySQL Workbench          | 8.0.28                      |
-| OpenTelemetry Collector  | 0.95.0                      |
-| Loki                     | 2.9.4                       |
-| Tempo                    | 2.5.0                       |
-| Prometheus               | v2.49.1                     |
-| Alertmanager             | v0.27.0                     |
-| Grafana                  | 10.4.2                      |
+| Component | Version | Purpose |
+|-----------|---------|---------|
+| OpenTelemetry Collector | 0.95.0 | Receives OTLP logs/metrics/traces from any app and fans them out to the backends |
+| Grafana Loki | 2.9.4 | Log storage and querying |
+| Grafana Tempo | 2.5.0 | Trace storage |
+| Prometheus | 2.49.1 | Metrics storage + alert rule evaluation |
+| Alertmanager | 0.27.0 | Alert routing (Discord by default) |
+| Grafana | 10.4.2 | Unified UI for logs, metrics, traces, and alerts |
+
+All persistent data is stored in Docker-managed volumes so this repo stays config-only.
 
 ---
 
-### Prerequisite: Set Discord Webhook for Alertmanager
+## Prerequisites
 
-Before starting the stack, export your Discord webhook URL as an environment variable so Alertmanager can send alerts to Discord:
+- Docker Desktop / Docker Engine + Compose plugin
+- GNU Make (macOS comes with 3.81; anything ≥3.81 works)
+- Optional: set `OBSERVABILITY_NETWORK_NAME` if you need a custom shared network name (default: `oaas-observability-net`).
+- Required: export a Discord webhook so Alertmanager can send notifications:
 
 ```bash
-export DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/your_webhook_id/your_webhook_token"
-```
-
-This ensures the Alertmanager container receives the webhook URL securely from your host environment.
-
----
-
-## Installation & Run
-```bash
-# Clone repo
-$ git clone https://github.com/vyavasthita/tic-tac-toe.git
-$ cd tic-tac-toe
-$ git checkout master
-
-# Start all services
-$ make all
+export DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/<id>/<token>"
 ```
 
 ---
 
-### Access Services
+## Quick Start
 
-| Service           | URL                                 | Notes                      |
-|-------------------|-------------------------------------|----------------------------|
-| FastAPI Docs      | http://localhost:5000/docs          |                            |
-| PhpMyAdmin        | http://localhost:8081/              |                            |
-| MySQL Workbench   | http://localhost:3000/              |                            |
-| Loki              | http://localhost:3100/              |                            |
-| Tempo             | http://localhost:3200/              |                            |
-| Prometheus        | http://localhost:9090/              |                            |
-| Alertmanager      | http://localhost:9093/              |                            |
-| Grafana           | http://localhost:8080/              | user: admin, pass: admin   |
-
----
-
-### Observability
-- OpenTelemetry Collector: Collects logs from backend, exports to Loki ([Overview](observability/docs/observability.md))
-- Loki: Stores and indexes logs ([Logging](observability/docs/observability-logs.md))
-- Prometheus: Scrapes metrics (can be extended) ([Metrics](observability/docs/observability-metrics.md))
-- Tempo: Stores and indexes traces ([Traces](observability/docs/observability-traces.md))
-- Alertmanager: Routes alerts to notification channels (email, Slack, etc.) ([Alerting](observability/docs/observability-alerting.md))
-- Grafana: Visualizes logs, metrics, traces, and alerts
-
----
-
-## Stopping & Cleaning
 ```bash
-# Stop all containers
-$ make stop
+# from the repo root
+make clean        # optional, ensures nothing stale is running
+make up           # creates the shared network, merges OTEL config, boots stack
+make ps           # check container health/state
 
-# Remove all containers and data
-$ make clean
+# when you are done
+make stop         # stop containers but preserve volumes
+make down         # stop + remove containers
+make clean        # stop + remove containers and anonymous volumes
 ```
 
+The Make targets call `docker compose` under the hood, so you can still run `docker compose logs` or `docker compose ps` directly if you prefer.
+
 ---
 
-## Kubernetes (Planned)
-### Kubernetes Access (Ingress)
-- All services are accessible via the ingress controller at:
+## Shared Docker Network
 
-  | Service           | URL                                 |
-  |-------------------|-------------------------------------|
-  | PhpMyAdmin        | http://localhost:8080/phpmyadmin/   |
-  | FastAPI Docs      | http://localhost:5000/docs          |
-  | Loki              | http://localhost:8080/loki/         |
-  | Tempo             | http://localhost:8080/tempo/        |
-  | Prometheus        | http://localhost:8080/prometheus/   |
-  | Alertmanager      | http://localhost:8080/alertmanager/ |
-  | Grafana           | http://localhost:8080/grafana/      |
+OAAS exposes its services over an external Docker network so other repositories can connect without sharing compose files.
 
-- No need to update your host file. Port-forwarding is automated via the Makefile (`make kup`).
-- If you restart your cluster, rerun `make kup` to restore access.
+1. `make up` (or `make network`) ensures the network exists. By default it is named `oaas-observability-net`.
+2. In any other repo, declare the same network as external:
 
-- To run with Minikube:
-  ```bash
-  minikube start --memory=4098
-  make kup
-  ```
+```yaml
+networks:
+  observability:
+    external: true
+    name: ${OBSERVABILITY_NETWORK_NAME:-oaas-observability-net}
+```
+
+3. Attach relevant services to that network and point their OTLP exporters to `http://otel-collector:4318/v1/{logs,traces,metrics}`.
+Because Docker DNS is shared inside the network, `otel-collector`, `loki`, `tempo`, `prometheus`, and `grafana` resolve without extra configuration.
+
+This separation lets you iterate on your application compose file independently while still reusing a single observability plane.
+
+---
+
+## OpenTelemetry Collector Strategy
+
+The Collector remains part of this repo. Its config is built from modular YAML fragments in [observability/config/otel_collector/config](observability/config/otel_collector/config) and merged via `make otel` (automatically invoked by `make up`). Keep customizations additive:
+
+1. Update `receivers.yaml`, `processors.yaml`, `exporters.yaml`, or `pipelines.yaml` as needed.
+2. Run `make otel` to regenerate `otel-collector-config.generated.yaml`.
+3. Restart the Collector (`make up` or `docker compose restart otel-collector`).
+
+Because every client sends OTLP telemetry over the shared network, the collector stays framework-agnostic while still owning fan-out logic to Loki/Tempo/Prometheus.
+
+---
+
+## Service Endpoints
+
+| Service | URL | Notes |
+|---------|-----|-------|
+| Grafana | http://localhost:8080/ | admin / admin (change in production) |
+| Prometheus | http://localhost:9090/ | includes sample alert rule |
+| Alertmanager | http://localhost:9093/ | make sure `DISCORD_WEBHOOK_URL` is set |
+| Loki API | http://localhost:3100/ | useful for quick readiness probes |
+| Tempo | http://localhost:3200/ | provides the Tempo query API |
+| OTEL Collector | Ports 4317/4318 | gRPC/HTTP OTLP ingest endpoints |
+
+All services live on the shared Docker network, so containers from other repos can reach them at their service names.
+
+---
+
+## Integrating Another Repository
+
+1. **Join the network** – Either add the `observability` network in your compose file (see above) or run `docker network connect` after the fact.
+2. **Set OpenTelemetry env vars** in the app compose/service definition:
+   - `OTEL_EXPORTER_LOGS_ENDPOINT=http://otel-collector:4318/v1/logs`
+   - `OTEL_EXPORTER_TRACES_ENDPOINT=http://otel-collector:4318/v1/traces`
+   - `OTEL_EXPORTER_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics`
+   - `OTEL_METRICS_EXPORTER=otlp`
+   - `OTEL_SERVICE_NAME=<your-service>`
+3. **(Optional) Additional Prometheus scrape targets** – if you still need Prometheus to scrape a metrics endpoint directly, extend [observability/config/observability_backends/prometheus/config/prometheus.yaml](observability/config/observability_backends/prometheus/config/prometheus.yaml) with another `job_name` that points to your container on the shared network.
+4. **Dashboards & Alerts** – drop JSON dashboards inside [observability/config/grafana/dashboards](observability/config/grafana/dashboards) and alert rules into [observability/config/observability_backends/prometheus/config/test-alerts.yaml](observability/config/observability_backends/prometheus/config/test-alerts.yaml) (or a new file referenced from Prometheus).
+
+---
+
+## Documentation
+
+- [High-level implementation guide](observability/docs/main.md)
+- [Common OpenTelemetry concepts](observability/docs/common.md)
+- [Logs](observability/docs/logs.md) · [Metrics](observability/docs/metrics.md) · [Traces](observability/docs/traces.md)
+- [Grafana provisioning](observability/docs/grafana.md)
+- [Alerting](observability/docs/alerting.md)
+
+Each guide has been updated to reflect the observability-as-a-service model (no coupled backend, shared network, OTLP-first ingress).
+
+---
+
+## Troubleshooting & Verification
+
+1. `make ps` – confirm every container is `running (healthy)`.
+2. `curl http://localhost:3100/ready` – verifies Loki readiness.
+3. `curl http://localhost:3200/ready` – verifies Tempo readiness.
+4. Visit Grafana and confirm Prometheus/Loki/Tempo datasources are `OK`.
+5. From another repo, send a test log/trace/metric and verify it shows up in Grafana.
+
+If a service fails, inspect logs via `make logs` (streams all containers) or `docker compose logs <service>`.
+
+---
+
+## Cleaning Up
+
+```bash
+make stop   # stop containers only
+make down   # stop + remove containers (keeps volumes)
+make clean  # stop + remove containers and anonymous volumes
+```
+
+Named volumes (`grafana_data`, `loki_data`, `loki_wal`, `tempo_data`) remain until you delete them manually with `docker volume rm`. This keeps historical telemetry intact across restarts.
 
 ---
 
 ## References
-- [Observability Zero to Hero](https://github.com/iam-veeramalla/observability-zero-to-hero/)
-- [OpenTelemetry & Python Guide](https://www.cncf.io/blog/2022/04/22/opentelemetry-and-python-a-complete-instrumentation-guide/)
-- [FastAPI Monitoring with Grafana & Prometheus](https://dev.to/ken_mwaura1/getting-started-monitoring-a-fastapi-app-with-grafana-and-prometheus-a-step-by-step-guide-3fbn)
 
----
-
-## Roadmap
-- [ ] Add Kubernetes manifests and Helm charts
-- [ ] Extend observability to metrics and traces
-- [ ] Add more dashboards and alerting
-
----
-
-## Contributing
-See [Contributors](https://github.com/vyavasthita/grhakarya/graphs/contributors)
-
----
-
-## Code of Conduct
-TBD
+- [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/)
+- [Grafana LGTM stack](https://grafana.com/oss/lgtm/)
+- [Prometheus Alerting](https://prometheus.io/docs/alerting/latest/overview/)
 
 ---

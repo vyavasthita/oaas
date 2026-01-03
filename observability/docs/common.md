@@ -4,6 +4,8 @@
 
 This document covers the foundational concepts, protocols, and architecture patterns used for observability in this project, including OpenTelemetry, Collector, and backend integration. It is intended as a shared reference for all telemetry types (logs, metrics, traces).
 
+> Context: the repository now exposes observability as a standalone service. Client applications connect over a shared Docker network and push OTLP telemetry into the stack.
+
 ---
 
 ## Protocols Used in the Observability Pipeline
