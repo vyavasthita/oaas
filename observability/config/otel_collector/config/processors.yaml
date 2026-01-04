@@ -1,25 +1,22 @@
 
 # Processors for OpenTelemetry Collector
-# Processors transform, batch, or enrich telemetry data.
-# The batch processor is recommended for production use.
-# Adds a batch processor, which groups logs for efficient export. This is a best practice for performance and reliability.
+# --------------------------------------
+# This file lists every processor that can be referenced by the service pipelines.
+# The order below mirrors the order we intend to execute inside each pipeline:
+#   1. batching processors smooth out traffic spikes before any expensive work happens;
+#   2. attribute processors enrich telemetry so routing decisions have the metadata they need;
+#   3. routing processors run last and fan data out to the correct exporter(s).
+# routing/* must therefore appear at the end of this file and the end of each pipeline definition.
 
 processors:
+  # Batch processors buffer data so downstream exporters receive predictable bursts.
   batch:
     timeout: 10s
   batch/metrics:
     timeout: 10s
-  attributes/loki:
-      actions:
-        - key: "service.name"
-          action: insert
-          from_attribute: "service.name"
-        - key: "severity"
-          action: insert
-          from_attribute: "severity"
-        - key: "container.name"
-          action: insert
-          from_attribute: "container.name"
+
+  # Attribute processors run immediately before routing. They copy resource/log fields into
+  # attributes that Loki expects and make sure routing has the metadata it needs.
   attributes/log-labels:
     actions:
       - key: "service.name"
@@ -31,3 +28,36 @@ processors:
       - key: "container.name"
         action: insert
         from_attribute: "container.name"
+  attributes/loki:
+      actions:
+        - key: "service.name"
+          action: insert
+          from_attribute: "service.name"
+        - key: "severity"
+          action: insert
+          from_attribute: "severity"
+        - key: "container.name"
+          action: insert
+          from_attribute: "container.name"
+
+  # Routing processors read per-signal backend hints from the resource attributes supplied by
+  # instrumentation-hub-fastapi (logging_backend / tracing_backend / metrics_backend). They MUST
+  # be declared last because any processors listed after these would never see data.
+  routing/logs:
+    from_attribute: "logging_backend"
+    attribute_source: resource
+    table:
+      - value: "loki"
+        exporters: [loki]
+  routing/traces:
+    from_attribute: "tracing_backend"
+    attribute_source: resource
+    table:
+      - value: "tempo"
+        exporters: [otlp]
+  routing/metrics:
+    from_attribute: "metrics_backend"
+    attribute_source: resource
+    table:
+      - value: "prometheus"
+        exporters: [prometheus]
