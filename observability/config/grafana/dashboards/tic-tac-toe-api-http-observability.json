@@ -18,7 +18,6 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1,
   "links": [],
   "panels": [
     {
@@ -380,8 +379,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -441,6 +439,6 @@
   "timezone": "browser",
   "title": "tic_tac_toe_api_application_overview",
   "uid": "cf8rqr581pmo0f",
-  "version": 6,
+  "version": 1,
   "weekStart": ""
 }
