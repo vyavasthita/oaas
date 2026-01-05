@@ -6,11 +6,11 @@ This repository acts as "Observability as a Service" for every backend that can 
 
 ### 1. Boot OAAS
 
-1. Run `make up` to create the shared Docker network, regenerate the Collector config, and start Loki, Tempo, Prometheus, Alertmanager, and Grafana.
+1. Run `make up` to create the shared Docker network, regenerate the Collector config, and start Loki, OpenSearch, Tempo, Prometheus, Alertmanager, and Grafana.
 2. Confirm container health with `make ps` (or `docker compose ps`).
 3. Export `DISCORD_WEBHOOK_URL` before running `make up` so Alertmanager can send notifications.
 
-All persistent data lives in Docker volumes (`grafana_data`, `loki_data`, `loki_wal`, `tempo_data`).
+All persistent data lives in Docker volumes (`grafana_data`, `loki_data`, `loki_wal`, `opensearch_data`, `tempo_data`).
 
 ---
 
@@ -65,7 +65,7 @@ The Collector is assembled from modular YAML fragments stored in [observability/
 |------|---------|
 | `receivers.yaml` | Defines OTLP HTTP + gRPC ingress.
 | `processors.yaml` | Adds batching and attribute enrichment.
-| `exporters.yaml` | Targets Loki, Tempo, and the Prometheus exporter.
+| `exporters.yaml` | Targets Loki, OpenSearch, Tempo, and the Prometheus exporter.
 | `pipelines.yaml` | Wires receivers → processors → exporters per signal.
 
 Edit the fragments, run `make otel`, and restart the collector when changes land. The generated config stays out of version control.
@@ -74,7 +74,7 @@ Edit the fragments, run `make otel`, and restart the collector when changes land
 
 ### 6. Visualize & Alert
 
-- Grafana is pre-provisioned with Prometheus, Loki, and Tempo data sources. Drop JSON dashboards into [observability/config/grafana/dashboards](../config/grafana/dashboards) and they load automatically.
+- Grafana is pre-provisioned with Prometheus, Loki, OpenSearch Logs, and Tempo data sources. Drop JSON dashboards into [observability/config/grafana/dashboards](../config/grafana/dashboards) and they load automatically.
 - Prometheus alert rules belong in [observability/config/observability_backends/prometheus/config/test-alerts.yaml](../config/observability_backends/prometheus/config/test-alerts.yaml) (or another referenced file).
 - Alertmanager uses a templated config plus an entrypoint script so secrets live in environment variables.
 
@@ -88,11 +88,13 @@ See the focused docs: [logs](logs.md), [metrics](metrics.md), [traces](traces.md
 flowchart LR
     app((Any App)) -->|instrumentation-hub| helper[setup_fastapi_instrumentation]
     helper -->|OTLP| collector[OpenTelemetry Collector]
-    collector -->|logs| loki[Loki]
+  collector -->|logs| loki[Loki]
+  collector -->|logs| opensearch[OpenSearch]
     collector -->|traces| tempo[Tempo]
     collector -->|metrics| prometheus[Prometheus]
     prometheus --> alertmanager[Alertmanager]
     loki --> grafana[Grafana]
+  opensearch --> grafana
     tempo --> grafana
     prometheus --> grafana
     alertmanager -->|notifications| discord[(Discord / Receiver)]

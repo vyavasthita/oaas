@@ -15,7 +15,7 @@ service:
       # Logs run through batching, then both attribute processors (labels for Grafana + Loki).
       # routing/logs must be last so it can look at logging_backend and decide which exporter to use.
       processors: [batch, attributes/log-labels, attributes/loki, routing/logs]
-      exporters: [loki]
+      exporters: [loki, elasticsearch/opensearch]
     traces:
       receivers: [otlp]
       # Traces only need batching before routing. routing/traces reads tracing_backend from the

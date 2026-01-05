@@ -13,3 +13,4 @@ datasources:
     version: 1
     jsonData:
       maxLines: 1000
+      manageAlerts: false

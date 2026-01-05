@@ -49,6 +49,8 @@ processors:
     table:
       - value: "loki"
         exporters: [loki]
+      - value: "opensearch"
+        exporters: [elasticsearch/opensearch]
   routing/traces:
     from_attribute: "tracing_backend"
     attribute_source: resource

@@ -6,12 +6,12 @@ This document describes how Grafana is configured, provisioned, and used inside 
 
 ## Overview
 
-Grafana is used to visualize metrics, logs, and traces from Prometheus, Loki, and Tempo. Dashboards provide actionable insights into application health, performance, and business KPIs.
+Grafana is used to visualize metrics, logs, and traces from Prometheus, Loki, OpenSearch, and Tempo. Dashboards provide actionable insights into application health, performance, and business KPIs.
 
 ---
 
 ## Key Concepts
-- **Data Sources:** Prometheus (metrics), Loki (logs), Tempo (traces)
+- **Data Sources:** Prometheus (metrics), Loki & OpenSearch (logs), Tempo (traces)
 - **Dashboards:** Visual collections of panels for observability
 - **Panels:** Visualizations (graphs, tables, stats, etc.)
 - **Provisioning:** Automated setup of data sources and dashboards via config files and JSON
@@ -38,8 +38,12 @@ docs/grafana.md
 ---
 
 ## Data Source Provisioning
-- Use YAML files in `provisioning/datasources/` to define Prometheus, Loki, and Tempo data sources.
-- Example: `datasources.yaml` configures Prometheus at `http://prometheus:9090`.
+- Use YAML files in `provisioning/datasources/` to define Prometheus, Loki, OpenSearch, and Tempo data sources.
+- Files:
+    - `prometheus.yaml` → Prometheus at `http://prometheus:9090`
+    - `loki.yaml` → Loki at `http://loki:3100`
+    - `opensearch.yaml` → OpenSearch Logs at `http://opensearch:9200` (pre-configured for the `otel-logs-*` index)
+    - `tempo.yaml` → Tempo at `http://tempo:3200`
 
 ---
 
