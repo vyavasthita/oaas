@@ -10,6 +10,7 @@ This repository now hosts a standalone observability stack (Loki + Tempo + Prome
 |-----------|---------|---------|
 | OpenTelemetry Collector | 0.95.0 | Receives OTLP logs/metrics/traces from any app and fans them out to the backends |
 | Grafana Loki | 2.9.4 | Log storage and querying |
+| OpenSearch | 2.11.0 | Elasticsearch-compatible log storage & full-text search |
 | Grafana Tempo | 2.5.0 | Trace storage |
 | Prometheus | 2.49.1 | Metrics storage + alert rule evaluation |
 | Alertmanager | 0.27.0 | Alert routing (Discord by default) |
@@ -65,7 +66,7 @@ Most backend repos only need a handful of steps to start emitting telemetry into
 
 3. **Wire the helper** – inside your FastAPI bootstrap file call `setup_fastapi_instrumentation(app)` and pass the OTLP endpoint env vars shown below.
 4. **Join the network** – attach your container to the `observability` network alias (details in the next section).
-5. **Verify in Grafana** – hit any endpoint in your service and confirm logs/metrics/traces appear in Grafana → Explore.
+5. **Verify in Grafana** – hit any endpoint in your service and confirm logs/metrics/traces appear in Grafana → Explore (select **Loki** or **OpenSearch Logs** for log queries).
 
 ```mermaid
 flowchart LR
@@ -125,6 +126,7 @@ Because every client sends OTLP telemetry over the shared network, the collector
 | Prometheus | http://localhost:9090/ | includes sample alert rule |
 | Alertmanager | http://localhost:9093/ | make sure `DISCORD_WEBHOOK_URL` is set |
 | Loki API | http://localhost:3100/ | useful for quick readiness probes |
+| OpenSearch | http://localhost:9200/ | REST API + Dev Tools console |
 | Tempo | http://localhost:3200/ | provides the Tempo query API |
 | OTEL Collector | Ports 4317/4318 | gRPC/HTTP OTLP ingest endpoints |
 
@@ -143,7 +145,8 @@ All services live on the shared Docker network, so containers from other repos c
    - `OTEL_METRICS_EXPORTER=otlp`
    - `OTEL_SERVICE_NAME=<your-service>`
 4. **(Optional) Additional Prometheus scrape targets** – if you still need Prometheus to scrape a metrics endpoint directly, extend [observability/config/observability_backends/prometheus/config/prometheus.yaml](observability/config/observability_backends/prometheus/config/prometheus.yaml) with another `job_name` that points to your container on the shared network.
-5. **Dashboards & Alerts** – drop JSON dashboards inside [observability/config/grafana/dashboards](observability/config/grafana/dashboards) and alert rules into [observability/config/observability_backends/prometheus/config/test-alerts.yaml](observability/config/observability_backends/prometheus/config/test-alerts.yaml) (or a new file referenced from Prometheus).
+5. **Pick your logging backend** by setting `LOGGING_BACKEND` in your app container environment to either `loki` (default) or `opensearch`. The instrumentation helper stamps this value onto the resource so the Collector’s routing processor can fan logs to the right exporter.
+6. **Dashboards & Alerts** – drop JSON dashboards inside [observability/config/grafana/dashboards](observability/config/grafana/dashboards) and alert rules into [observability/config/observability_backends/prometheus/config/test-alerts.yaml](observability/config/observability_backends/prometheus/config/test-alerts.yaml) (or a new file referenced from Prometheus).
 
 ---
 

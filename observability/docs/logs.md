@@ -97,35 +97,31 @@ In this project, Python logs are converted to this format by the OpenTelemetry L
   - After processing, the Collector exports logs to Loki using the Loki exporter (configured in `exporters.yaml`). The Loki exporter pushes logs to the Loki backend for storage and indexing.
   - In summary: Our backend (and any other OTLP-compatible service) sends logs to the Collector's OTLP endpoint; the Collector listens, processes, and exports these logs to Loki for visualization in Grafana.
 
-4. **Log Storage (Loki):**
-  - Loki is a log aggregation and storage backend. It is typically run as a Docker container in our stack.
-  - The OTEL Collector does not store logs itself; instead, it pushes logs to Loki using the Loki exporter. The exporter sends logs directly to Loki's HTTP API endpoint.
-  - **Passive Reception Explained:**
-    - Loki does not initiate any connection to the Collector or "pull" logs. Instead, it exposes an HTTP API endpoint (e.g., `/loki/api/v1/push`) and simply waits for incoming log data.
-    - The OTEL Collector, acting as a client, actively sends ("pushes") logs to Loki's endpoint whenever logs are ready for export.
-    - Loki's role is passive: it listens for HTTP POST requests containing log data, ingests the received logs, and stores them internally.
-    - This means Loki is always ready to accept logs, but it never requests or fetches them itself.
-  - **Network Flow Diagram:**
-    ```mermaid
-    sequenceDiagram
-        participant Collector as OTEL Collector
-        participant Loki as Loki (HTTP API)
-        Note over Collector: Collector prepares batched logs
-        Collector->>Loki: HTTP POST /loki/api/v1/push (log batch)
-        Loki-->>Collector: HTTP 204 No Content (acknowledge)
-        Note over Loki: Loki ingests and stores logs
-    ```
-  - Once logs are received, Loki stores them in its internal storage engine, which consists of:
-    - **WAL (Write-Ahead Log):** Temporary buffer for incoming logs before they are processed and chunked.
-    - **Chunks:** Compressed log data stored for efficient querying and retrieval.
-    - **Index:** Metadata for fast searching and filtering by labels.
-  - In this repo, Loki persists everything inside Docker volumes (`loki_data` and `loki_wal`). No host `data/` folder is needed anymore.
-  - Loki does not "call" the Collector or any endpoint to fetch logs; it passively receives logs pushed to it by the Collector and other clients.
-  - In summary: The OTEL Collector pushes logs to Loki's API endpoint, and Loki stores, indexes, and makes them available for querying and visualization in Grafana. All log data lives inside Docker-managed volumes so it survives container restarts.
+4. **Log Storage (Loki & OpenSearch):**
+  - The Collector's [`routing/logs` processor](../config/otel_collector/config/processors.yaml) looks at the `logging_backend` resource attribute emitted by `instrumentation-hub-fastapi`. Supported values today are `loki` and `opensearch`, so every service can pick its storage target without touching the Collector.
+  - When `logging_backend=loki`, the Loki exporter sends batched OTLP records to `http://loki:3100/loki/api/v1/push`. Loki listens for HTTP POST requests, ingests them into its WAL, compresses them into chunks, and indexes labels for fast queries. All state lives inside the `loki_data` and `loki_wal` Docker volumes.
+  - When `logging_backend=opensearch`, the OpenSearch exporter writes the same records to the `opensearch` container at `http://opensearch:9200`. Records land in the `otel-logs` index, which supports full-text search, field aggregations, and compatibility with Elasticsearch tooling. The container runs in single-node mode with security disabled for local development, and it persists to the `opensearch_data` volume.
+  - Both exporters are "push" based. Neither Loki nor OpenSearch reach back into the Collector; they simply expose HTTP APIs and accept whatever the Collector sends.
+
+  #### Why is there an `opensearch-proxy` container?
+
+  The OpenTelemetry Collector uses the `elasticsearchexporter` to write documents into OpenSearch. That exporter performs a safety check before accepting a cluster as "Elasticsearch-compatible" by looking for the `X-Elastic-Product: Elasticsearch` HTTP header. Upstream OpenSearch intentionally omits that header, so the exporter refuses to ingest logs and the entire pipeline stalls.
+
+  To stay fully compatible with the stock exporter we run a very small NGINX sidecar:
+
+  1. `opensearch-core` continues to run the real data node on port `9201`.
+  2. `opensearch-proxy` listens on port `9200`, forwards every request to `opensearch-core`, and injects the missing `X-Elastic-Product` header on the way back.
+  3. The Collector, Grafana, and any human using `curl http://localhost:9200` now talk to the proxy and succeed in the capability check. No credentials, storage paths, or APIs change.
+
+  We continue to rely on the upstream `elasticsearchexporter` because it ships with otelcol-contrib, receives regular fixes, and speaks both Elasticsearch and OpenSearch dialects. The NGINX shim is therefore the smallest possible change that keeps us on the supported exporter while unlocking the OpenSearch experience we prefer.
+
+  You can see this behavior by running `curl -I http://localhost:9200` (note the extra response header) or by querying Grafana's OpenSearch data source, which now works without custom plugins.
 
 5. **Log Visualization (Grafana):**
-   - Grafana is configured to use Loki as a data source (via provisioning files in `observability/config/grafana/provisioning/datasources/`).
-   - We can explore logs in Grafana, filter by labels, and build dashboards for monitoring and troubleshooting.
+  - Grafana now ships with **two** log data sources via provisioning files under `observability/config/grafana/provisioning/datasources/`:
+    - **Loki** – best for label-based queries and log/trace correlation.
+    - **OpenSearch Logs** – best for free-text search or teams that already know the Elasticsearch DSL.
+  - Use Grafana → Explore to choose the data source that matches the backend selected by your service. Dashboards can mix both if needed.
 
 ---
 
@@ -143,12 +139,16 @@ flowchart TD
   B1[OTLP Receiver HTTP or gRPC]
   B2[Batch Processor]
   B3[Loki Exporter]
+  B4[OpenSearch Exporter]
   C1[Loki API Endpoint]
   C2[WAL Write Ahead Log]
   C3[Chunks Compressed Log Data]
-  C4[Index Label Metadata]
-  C5[Mapped Storage data-loki]
+  C4[Loki Label Index]
+  E1[OpenSearch API Endpoint]
+  E2[otel-logs Index]
+  E3[Full-text + aggregations]
   D1[Loki Data Source]
+  D4[OpenSearch Logs Data Source]
   D2[Log Explorer]
   D3[Dashboards]
 
@@ -158,15 +158,20 @@ flowchart TD
   A4 -->|Batch and prepare| A5
   A5 -->|Push logs OTLP| B1
   B1 -->|Receive log records| B2
-  B2 -->|Batch and process| B3
+  B2 --> B3
+  B2 --> B4
   B3 -->|Push logs HTTP| C1
   C1 -->|Ingest logs| C2
   C2 -->|Buffer| C3
   C3 -->|Store| C4
-  C4 -->|Index| C5
-  C5 -->|Query logs| D1
-  D1 -->|Label filter or search| D2
-  D2 -->|Build dashboards| D3
+  B4 -->|Push logs HTTP| E1
+  E1 -->|Write docs| E2
+  E2 -->|Search/aggregate| E3
+  C4 -->|Query logs| D1
+  E3 -->|Query logs| D4
+  D1 --> D2
+  D4 --> D2
+  D2 --> D3
 ```
 
 **Step-by-step explanation:**
@@ -180,12 +185,13 @@ flowchart TD
   - OTLPLogExporter serializes and pushes logs to the Collector's OTLP endpoint (HTTP/gRPC).
 3. **Collector Processing:**
   - Collector's OTLP receiver ingests logs, applies batch processing, and uses the Loki exporter to push logs to Loki's HTTP API endpoint.
-4. **Loki Storage:**
-  - Loki receives logs via HTTP POST, buffers them in WAL, compresses into chunks, and indexes by labels.
-  - All persistent log data is stored in the Docker volumes declared in `docker-compose.yaml` (`loki_data`, `loki_wal`).
+4. **Backend Storage:**
+  - If a service sets `logging_backend=loki`, the collector pushes batches to Loki where they are persisted in WAL and chunk storage before indexing by labels.
+  - If a service sets `logging_backend=opensearch`, the collector writes the same batches into the `otel-logs` index, unlocking full-text search and aggregations on every field.
+  - Both backends persist data inside Docker volumes so it survives container restarts.
 5. **Grafana Visualization:**
-  - Grafana is provisioned to use Loki as a data source.
-  - Logs can be explored, filtered by labels, and visualized in dashboards for monitoring and troubleshooting.
+  - Grafana now offers two log data sources—`Loki` and `OpenSearch Logs`—so you can query whichever backend your service targets.
+  - Logs can be explored, filtered, or aggregated in Explore, and any query can be promoted into a dashboard panel.
 
 This diagram and explanation cover every major component and step in the log pipeline, from generation to visualization.
 
@@ -201,7 +207,7 @@ This diagram and explanation cover every major component and step in the log pip
 - **Loki Config:**
   - `observability/config/observability_backends/loki/config/loki-config.yaml` sets up Loki's storage and indexing.
 - **Grafana Provisioning:**
-  - `observability/config/grafana/provisioning/` contains data source and dashboard configs for Grafana.
+  - `observability/config/grafana/provisioning/` contains data source and dashboard configs for Grafana (Prometheus, Loki, Tempo, and OpenSearch Logs).
 
 ---
 

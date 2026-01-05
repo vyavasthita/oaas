@@ -6,6 +6,12 @@ exporters:
   loki:
     endpoint: http://loki:3100/loki/api/v1/push
 
+  elasticsearch/opensearch:
+    endpoints: ["http://opensearch:9200"]
+    logs_index: "otel-logs"
+    tls:
+      insecure: true
+
   otlp:
     endpoint: http://tempo:4317
     tls:

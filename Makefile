@@ -49,25 +49,31 @@ up: stop network otel
 	@echo "[up] docker compose -f $(COMPOSE_FILE) up -d --build --remove-orphans"
 	@docker compose -f $(COMPOSE_FILE) up -d --build --remove-orphans
 
+
 .PHONY: stop
 stop:
-	@echo "[stop] docker compose -f $(COMPOSE_FILE) stop"
-	@docker compose -f $(COMPOSE_FILE) stop
+	@echo "[stop] stopping containers (ignore errors if not running)"
+	@docker compose -f $(COMPOSE_FILE) stop || true
+
 
 .PHONY: down
 down:
-	@echo "[down] docker compose -f $(COMPOSE_FILE) down --remove-orphans"
-	@docker compose -f $(COMPOSE_FILE) down --remove-orphans
+	@echo "[down] removing containers and orphans (ignore errors if not running)"
+	@docker compose -f $(COMPOSE_FILE) down --remove-orphans || true
 
 .PHONY: clean
 clean:
-	@echo "[clean] tearing down containers and anonymous volumes"
+	@echo "[clean] tearing down containers, anonymous volumes, and orphans (ignore errors if not running)"
 	@docker compose -f $(COMPOSE_FILE) down -v --remove-orphans || true
+	@echo "[clean] pruning stopped containers"
+	@docker container prune -f >/dev/null
+	@echo "[clean] pruning unused images"
+	@docker image prune -f >/dev/null || true
 
 .PHONY: build
 build:
-	@echo "[build] docker compose -f $(COMPOSE_FILE) build --no-cache"
-	@docker compose -f $(COMPOSE_FILE) build --no-cache
+	@echo "[build] rebuilding images without cache (ignore errors if not buildable)"
+	@docker compose -f $(COMPOSE_FILE) build --no-cache || true
 
 .PHONY: ps
 ps:
