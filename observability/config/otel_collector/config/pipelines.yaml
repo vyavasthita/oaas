@@ -19,9 +19,9 @@ service:
     traces:
       receivers: [otlp]
       # Traces only need batching before routing. routing/traces reads tracing_backend from the
-      # resource and forwards spans to the matching exporter endpoint (Tempo today, extensible later).
+      # resource and forwards spans to the matching exporter endpoint (Tempo or Jaeger today).
       processors: [batch, routing/traces]
-      exporters: [otlp]
+      exporters: [otlp, otlp/jaeger]
 
     metrics:
       receivers: [otlp]

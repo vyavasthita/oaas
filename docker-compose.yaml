@@ -85,6 +85,22 @@ services:
     networks:
       - observability
 
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: jaeger
+    restart: unless-stopped
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:16686"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - observability
+
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.95.0
     container_name: otel-collector
@@ -102,6 +118,8 @@ services:
       opensearch:
         condition: service_healthy
       tempo:
+        condition: service_started
+      jaeger:
         condition: service_started
     networks:
       - observability

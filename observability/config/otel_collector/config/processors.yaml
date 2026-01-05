@@ -57,6 +57,8 @@ processors:
     table:
       - value: "tempo"
         exporters: [otlp]
+      - value: "jaeger"
+        exporters: [otlp/jaeger]
   routing/metrics:
     from_attribute: "metrics_backend"
     attribute_source: resource

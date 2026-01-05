@@ -20,6 +20,24 @@ This keeps all services aligned with the same semantic conventions and drastical
 
 ---
 
+## Signal Routing via Resource Attributes
+
+Instrumentation Hub automatically stamps three resource attributes on every log/span/metric:
+
+| Attribute | Supported Values | Purpose |
+|-----------|------------------|---------|
+| `logging_backend` | `loki`, `opensearch` | Tells the Collector whether to ship logs to Loki or the elasticsearch-compatible stack.
+| `tracing_backend` | `tempo`, `jaeger` | Fans traces to Tempo (default) or the new Jaeger backend.
+| `metrics_backend` | `prometheus` | Reserves future expansion for alternate metrics sinks.
+
+Set the matching `*_BACKEND` environment variables (e.g., `TRACING_BACKEND=jaeger`) in each workload to pick a
+single destination per signal without editing OAAS config. A service therefore emits logs to exactly one logging
+backend, traces to exactly one tracing backend, and so on. Because the collector keeps every exporter active
+(Tempo+Jaeger, Loki+OpenSearch), multiple services can stream telemetry simultaneously even if they choose
+different combinations.
+
+---
+
 ## Protocols Used in the Observability Pipeline
 
 ### OTLP vs REST

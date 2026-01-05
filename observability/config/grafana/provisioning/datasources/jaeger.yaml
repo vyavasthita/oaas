@@ -1,0 +1,10 @@
+apiVersion: 1
+
+# Provision Jaeger as an optional traces data source in Grafana.
+# Users can switch between Tempo and Jaeger panels without manual setup.
+datasources:
+  - name: Jaeger
+    type: jaeger
+    access: proxy
+    url: http://jaeger:16686
+    editable: true
