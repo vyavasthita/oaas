@@ -138,6 +138,29 @@ flowchart TD
 
 ---
 
+## Selecting a Traces Backend (Tempo vs Jaeger)
+
+The OpenTelemetry Collector now supports both Tempo and Jaeger exporters. It inspects the
+`tracing_backend` resource attribute (set by `instrumentation-hub-fastapi`) to route each batch.
+
+- `TRACING_BACKEND=tempo` *(default)* keeps the existing path through Tempo.
+- `TRACING_BACKEND=jaeger` fans spans out to the Jaeger all-in-one container provisioned in
+   `docker-compose.yaml`.
+
+Internally, the collector keeps two OTLP/gRPC exporters active: `otlp` targets Tempo on port 4317 while
+`otlp/jaeger` targets the Jaeger collector on its own port 4317 endpoint. Each workload still chooses only one
+`tracing_backend` value at a time, but keeping both exporters live lets different services pick different
+backends without drains or restarts.
+
+Validation tips:
+
+1. Visit Grafana → Connections → Data Sources to see both **Tempo** and **Jaeger** pre-provisioned.
+2. Generate requests against tic-tac-toe, then query `http://localhost:16686/api/traces?service=tic-tac-toe-api`
+   when Jaeger is selected to confirm new traces are ingested.
+3. Use Grafana's Explore view with the Tempo/Jaeger switcher to confirm spans render in both backends.
+
+---
+
 ## Configuration Files: How Data Flows
 
 - **Backend Tracing Setup:**
@@ -148,7 +171,8 @@ flowchart TD
 - **Tempo Config:**
   - `observability/config/observability_backends/tempo/config/tempo.yaml` sets up Tempo's storage and ingestion endpoints.
 - **Grafana Provisioning:**
-  - `observability/config/grafana/provisioning/datasources/tempo.yaml` provisions Tempo as a data source in Grafana.
+   - `observability/config/grafana/provisioning/datasources/tempo.yaml` provisions Tempo as a data source in Grafana.
+   - `observability/config/grafana/provisioning/datasources/jaeger.yaml` provisions Jaeger for side-by-side comparisons.
 
 ---
 

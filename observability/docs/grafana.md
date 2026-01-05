@@ -44,6 +44,7 @@ docs/grafana.md
     - `loki.yaml` → Loki at `http://loki:3100`
     - `opensearch.yaml` → OpenSearch Logs at `http://opensearch:9200` (pre-configured for the `otel-logs-*` index)
     - `tempo.yaml` → Tempo at `http://tempo:3200`
+    - `jaeger.yaml` → Jaeger at `http://jaeger:16686` (switch Grafana Explore between Tempo & Jaeger without manual setup)
 
 ---
 

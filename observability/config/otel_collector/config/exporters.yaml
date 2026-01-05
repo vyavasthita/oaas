@@ -17,5 +17,12 @@ exporters:
     tls:
       insecure: true
 
+  # Dedicated gRPC exporter for Jaeger so each traces backend has its own OTLP
+  # connection but the collector can still route per-service traffic dynamically.
+  otlp/jaeger:
+    endpoint: http://jaeger:4317
+    tls:
+      insecure: true
+
   prometheus:
     endpoint: "0.0.0.0:8889"

@@ -12,6 +12,7 @@ This repository now hosts a standalone observability stack (Loki + Tempo + Prome
 | Grafana Loki | 2.9.4 | Log storage and querying |
 | OpenSearch | 2.11.0 | Elasticsearch-compatible log storage & full-text search |
 | Grafana Tempo | 2.5.0 | Trace storage |
+| Jaeger all-in-one | 1.57 | Optional trace storage + UI for cross-validating spans |
 | Prometheus | 2.49.1 | Metrics storage + alert rule evaluation |
 | Alertmanager | 0.27.0 | Alert routing (Discord by default) |
 | Grafana | 10.4.2 | Unified UI for logs, metrics, traces, and alerts |
@@ -128,6 +129,7 @@ Because every client sends OTLP telemetry over the shared network, the collector
 | Loki API | http://localhost:3100/ | useful for quick readiness probes |
 | OpenSearch | http://localhost:9200/ | REST API + Dev Tools console |
 | Tempo | http://localhost:3200/ | provides the Tempo query API |
+| Jaeger | http://localhost:16686/ | alternate traces UI + API for the jaeger backend |
 | OTEL Collector | Ports 4317/4318 | gRPC/HTTP OTLP ingest endpoints |
 
 All services live on the shared Docker network, so containers from other repos can reach them at their service names.
@@ -147,6 +149,9 @@ All services live on the shared Docker network, so containers from other repos c
 4. **(Optional) Additional Prometheus scrape targets** – if you still need Prometheus to scrape a metrics endpoint directly, extend [observability/config/observability_backends/prometheus/config/prometheus.yaml](observability/config/observability_backends/prometheus/config/prometheus.yaml) with another `job_name` that points to your container on the shared network.
 5. **Pick your logging backend** by setting `LOGGING_BACKEND` in your app container environment to either `loki` (default) or `opensearch`. The instrumentation helper stamps this value onto the resource so the Collector’s routing processor can fan logs to the right exporter.
 6. **Dashboards & Alerts** – drop JSON dashboards inside [observability/config/grafana/dashboards](observability/config/grafana/dashboards) and alert rules into [observability/config/observability_backends/prometheus/config/test-alerts.yaml](observability/config/observability_backends/prometheus/config/test-alerts.yaml) (or a new file referenced from Prometheus).
+
+> Each service chooses exactly one backend per signal (logs, traces, metrics). Running multiple services with
+> different combinations is fully supported because the Collector keeps every exporter active simultaneously.
 
 ---
 
