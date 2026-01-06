@@ -1,0 +1,103 @@
+# -----------------------------------------------------------------------------------
+# OAAS Observability: Grafana Datasources ConfigMap
+#
+# Purpose:
+#   - Provisions all required data sources (Prometheus, Loki, Jaeger, OpenSearch, etc.)
+#     for Grafana in the oaas-observability namespace.
+#   - Ensures Grafana can connect to metrics, logs, and traces backends automatically
+#     on startup, without manual configuration.
+#
+# How it works:
+#   - Each YAML block under 'data:' defines a Grafana provisioning file for a datasource.
+#   - This ConfigMap is mounted into the Grafana pod at /etc/grafana/provisioning/datasources.
+#   - On startup, Grafana auto-imports all datasources defined in this directory.
+#
+# Consumers:
+#   - Consumed by the Grafana Deployment (see grafana_deployment.yaml) via a volume mount.
+#   - Maintainers: Update this file to add/remove datasources for new observability backends.
+#   - kubectl applies this ConfigMap to the cluster; Grafana pod reads it at runtime.
+# -----------------------------------------------------------------------------------
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: oaas-observability
+  labels:
+    app: grafana
+data:
+  jaeger.yaml: |
+    apiVersion: 1
+    
+    # Provision Jaeger as an optional traces data source in Grafana.
+    # Users can switch between Tempo and Jaeger panels without manual setup.
+    datasources:
+      - name: Jaeger
+        type: jaeger
+        access: proxy
+        url: http://jaeger:16686
+        editable: true
+  loki.yaml: |
+    apiVersion: 1
+    # Loki data source configuration for Grafana provisioning
+    # Moved from grafana/provisioning/datasources/loki.yaml
+    # Place this file in observability/config/grafana/provisioning/datasources/loki.yaml
+    
+    datasources:
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://loki:3100
+        isDefault: false
+        editable: true
+        version: 1
+        jsonData:
+          maxLines: 1000
+          manageAlerts: false
+  opensearch.yaml: |
+    apiVersion: 1
+    
+    # Provision OpenSearch so logs stored outside Loki still show up in Grafana Explore
+    
+    datasources:
+      - name: OpenSearch Logs
+        type: grafana-opensearch-datasource
+        access: proxy
+        url: http://opensearch:9200
+        isDefault: false
+        editable: true
+        jsonData:
+          database: "otel-logs"
+          timeField: "@timestamp"
+          timeFieldType: "timestamp"
+          flavor: "opensearch"
+          version: "2.11.0"
+          logMessageField: "Body"
+          logLevelField: "SeverityText"
+  prometheus.yaml: |
+    apiVersion: 1
+    
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus:9090
+        isDefault: true # makes it auto-selected
+        editable: false # prevents accidental UI edits
+  tempo.yaml: |
+    apiVersion: 1
+    
+    # Provision Tempo as a data source for traces in Grafana
+    # This file will be loaded automatically by Grafana on startup
+    
+    datasources:
+      - name: Tempo
+        type: tempo
+        access: proxy
+        url: http://tempo:3200
+        editable: true
+        jsonData:
+          httpMethod: GET
+          nodeGraph:
+            enabled: true
+          serviceMap:
+            enabled: true

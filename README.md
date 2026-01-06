@@ -30,6 +30,7 @@ All persistent data is stored in Docker-managed volumes so this repo stays confi
 
 ```bash
 export DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/<id>/<token>"
+export OAAS_DISCORD_WEBHOOK_URL="${DISCORD_WEBHOOK_URL}"  # required for make kup (Kubernetes secret rendering)
 ```
 
 ---
@@ -104,6 +105,10 @@ networks:
 Because Docker DNS is shared inside the network, `otel-collector`, `loki`, `tempo`, `prometheus`, and `grafana` resolve without extra configuration.
 
 This separation lets you iterate on your application compose file independently while still reusing a single observability plane.
+
+## Kubernetes Support
+
+When you are ready to exercise the manifests in `k8s/`, run `make kup`. The target now requires `OAAS_DISCORD_WEBHOOK_URL` (or `DISCORD_WEBHOOK_URL`) to be exported. During the deploy it renders `k8s/common/common_alertmanager_secret.yaml` from `k8s/common/common_alertmanager_secret.yaml.tmpl`, base64-encodes the webhook, and applies the generated manifest. The output file is `.gitignore`d and removed again by `make kdown`, so no plaintext secrets are committed—only the template remains in Git.
 
 ---
 

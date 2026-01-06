@@ -1,0 +1,148 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: oaas-observability
+  labels:
+    app: otel-collector
+data:
+  otel-collector-config.yaml: |
+    
+    # Receivers for OpenTelemetry Collector
+    # All client services push telemetry via OTLP (HTTP or gRPC), so the stack stays
+    # agnostic of their runtime or framework.
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    
+    # Enable OTLP for logs, metrics, and traces coming from any connected application.
+    
+    
+    # Processors for OpenTelemetry Collector
+    # --------------------------------------
+    # This file lists every processor that can be referenced by the service pipelines.
+    # The order below mirrors the order we intend to execute inside each pipeline:
+    #   1. batching processors smooth out traffic spikes before any expensive work happens;
+    #   2. attribute processors enrich telemetry so routing decisions have the metadata they need;
+    #   3. routing processors run last and fan data out to the correct exporter(s).
+    # routing/* must therefore appear at the end of this file and the end of each pipeline definition.
+    
+    processors:
+      # Batch processors buffer data so downstream exporters receive predictable bursts.
+      batch:
+        timeout: 10s
+      batch/metrics:
+        timeout: 10s
+    
+      # Attribute processors run immediately before routing. They copy resource/log fields into
+      # attributes that Loki expects and make sure routing has the metadata it needs.
+      attributes/log-labels:
+        actions:
+          - key: "service.name"
+            action: insert
+            from_attribute: "service.name"
+          - key: "severity"
+            action: insert
+            from_attribute: "severity"
+          - key: "container.name"
+            action: insert
+            from_attribute: "container.name"
+      attributes/loki:
+          actions:
+            - key: "service.name"
+              action: insert
+              from_attribute: "service.name"
+            - key: "severity"
+              action: insert
+              from_attribute: "severity"
+            - key: "container.name"
+              action: insert
+              from_attribute: "container.name"
+    
+      # Routing processors read per-signal backend hints from the resource attributes supplied by
+      # instrumentation-hub-fastapi (logging_backend / tracing_backend / metrics_backend). They MUST
+      # be declared last because any processors listed after these would never see data.
+      routing/logs:
+        from_attribute: "logging_backend"
+        attribute_source: resource
+        table:
+          - value: "loki"
+            exporters: [loki]
+          - value: "opensearch"
+            exporters: [elasticsearch/opensearch]
+      routing/traces:
+        from_attribute: "tracing_backend"
+        attribute_source: resource
+        table:
+          - value: "tempo"
+            exporters: [otlp]
+          - value: "jaeger"
+            exporters: [otlp/jaeger]
+      routing/metrics:
+        from_attribute: "metrics_backend"
+        attribute_source: resource
+        table:
+          - value: "prometheus"
+            exporters: [prometheus]
+    # Exporters for OpenTelemetry Collector
+    # Exporters send telemetry data to external backends.
+    # Here, we configure the Loki exporter for logs.
+    # Configures the Loki exporter, which sends logs to our Loki service.
+    exporters:
+      loki:
+        endpoint: http://loki:3100/loki/api/v1/push
+    
+      elasticsearch/opensearch:
+        endpoints: ["http://opensearch:9200"]
+        logs_index: "otel-logs"
+        tls:
+          insecure: true
+    
+      otlp:
+        endpoint: tempo:4317
+        tls:
+          insecure: true
+    
+      # Dedicated gRPC exporter for Jaeger so each traces backend has its own OTLP
+      # connection but the collector can still route per-service traffic dynamically.
+      otlp/jaeger:
+        endpoint: jaeger:4317
+        tls:
+          insecure: true
+    
+      prometheus:
+        endpoint: "0.0.0.0:8889"
+    
+    # Service pipelines for OpenTelemetry Collector
+    # ---------------------------------------------
+    # Each pipeline references the processor names declared in processors.yaml. The collector executes
+    # processors in the exact order listed *per pipeline*, so the sequence here is critical:
+    #   1. batch or batch/metrics smooth incoming traffic;
+    #   2. attribute mutators enrich telemetry with fields that Loki/Tempo/Prometheus require;
+    #   3. routing/* reads the backend hint stored on the resource (logging_backend, etc.) and fans the
+    #      signal out to the right exporter. Nothing can appear after routing or it will never see data.
+    # Exporters listed below still receive data, but routing decides which subset each signal forwards to.
+    
+    service:
+      pipelines:
+        logs:
+          receivers: [otlp]
+          # Logs run through batching, then both attribute processors (labels for Grafana + Loki).
+          # routing/logs must be last so it can look at logging_backend and decide which exporter to use.
+          processors: [batch, attributes/log-labels, attributes/loki, routing/logs]
+          exporters: [loki, elasticsearch/opensearch]
+        traces:
+          receivers: [otlp]
+          # Traces only need batching before routing. routing/traces reads tracing_backend from the
+          # resource and forwards spans to the matching exporter endpoint (Tempo or Jaeger today).
+          processors: [batch, routing/traces]
+          exporters: [otlp, otlp/jaeger]
+    
+        metrics:
+          receivers: [otlp]
+          # Metrics use a dedicated batch processor that respects metric reader cadence, then routing
+          # picks the metrics_backend (Prometheus by default) so future backends can be toggled via env.
+          processors: [batch/metrics, routing/metrics]
+          exporters: [prometheus]

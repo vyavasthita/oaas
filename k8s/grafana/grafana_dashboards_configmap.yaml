@@ -1,0 +1,37 @@
+# -----------------------------------------------------------------------------------
+# OAAS Observability: Grafana Dashboards Provider ConfigMap
+#
+# Purpose:
+#   - Tells Grafana where to find dashboard JSON definitions for auto-provisioning.
+#   - Ensures all dashboards in /var/lib/grafana/dashboards are loaded on startup.
+#
+# How it works:
+#   - This ConfigMap provides dashboard provisioning config (dashboard.yaml) for Grafana.
+#   - Mounted into the Grafana pod at /etc/grafana/provisioning/dashboards.
+#   - Points to the directory where dashboard JSONs are mounted (from dashboard ConfigMap).
+#
+# Consumers:
+#   - Consumed by the Grafana Deployment (see grafana_deployment.yaml) via a volume mount.
+#   - Maintainers: Update this file if dashboard provisioning structure changes.
+#   - kubectl applies this ConfigMap to the cluster; Grafana pod reads it at runtime.
+# -----------------------------------------------------------------------------------
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-providers
+  namespace: oaas-observability
+  labels:
+    app: grafana
+data:
+  dashboard.yaml: |
+    # filepath: observability/grafana/provisioning/dashboards/dashboard.yaml
+    apiVersion: 1
+    providers:
+      - name: 'default'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards

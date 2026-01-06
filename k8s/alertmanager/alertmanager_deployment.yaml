@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: oaas-observability
+  labels:
+    app: alertmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      containers:
+        - name: alertmanager
+          image: prom/alertmanager:v0.27.0
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "/etc/alertmanager/alertmanager-entrypoint.sh"]
+          env:
+            - name: DISCORD_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: alertmanager-secrets
+                  key: DISCORD_WEBHOOK_URL
+          ports:
+            - containerPort: 9093
+          volumeMounts:
+            - name: alertmanager-config
+              mountPath: /etc/alertmanager/alertmanager.yaml.template
+              subPath: alertmanager.yaml.template
+            - name: alertmanager-entrypoint
+              mountPath: /etc/alertmanager/alertmanager-entrypoint.sh
+              subPath: alertmanager-entrypoint.sh
+      volumes:
+        - name: alertmanager-config
+          configMap:
+            name: alertmanager-config
+            items:
+              - key: alertmanager.yaml.template
+                path: alertmanager.yaml.template
+        - name: alertmanager-entrypoint
+          configMap:
+            name: alertmanager-config
+            items:
+              - key: alertmanager-entrypoint.sh
+                path: alertmanager-entrypoint.sh
+            defaultMode: 0555

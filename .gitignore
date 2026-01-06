@@ -174,3 +174,6 @@ cython_debug/
 
 # Ignore generated OpenTelemetry Collector config
 observability/config/otel_collector/config/otel-collector-config.generated.yaml
+k8s/common/common_alertmanager_secret.yaml
+.grafana-port-forward.pid
+.grafana-port-forward.log

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: oaas-observability
+  labels:
+    app.kubernetes.io/name: oaas-observability
+    app.kubernetes.io/part-of: oaas
