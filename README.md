@@ -1,6 +1,8 @@
 # Observability as a Service (OAAS)
 
-This repository now hosts a standalone observability stack (Loki + Tempo + Prometheus + Alertmanager + Grafana + OpenTelemetry Collector). No application or database code lives here anymore—the goal is to expose observability capabilities that any backend can reuse over a shared Docker network.
+- This repository hosts a standalone observability stack (Loki + Tempo + Prometheus + Alertmanager + Grafana + OpenTelemetry Collector).
+- The goal is to expose observability capabilities that any backend can reuse over a shared network.
+- OTEL Instrumentation is implemented by using my own [Observability Toolkit Lib](https://github.com/vyavasthita/instrumentation-hub)
 
 ---
 
@@ -17,48 +19,41 @@ This repository now hosts a standalone observability stack (Loki + Tempo + Prome
 | Alertmanager | 0.27.0 | Alert routing (Discord by default) |
 | Grafana | 10.4.2 | Unified UI for logs, metrics, traces, and alerts |
 
-All persistent data is stored in Docker-managed volumes so this repo stays config-only.
-
 ---
 
 ## Prerequisites
 
 - Docker Desktop / Docker Engine + Compose plugin
-- GNU Make (macOS comes with 3.81; anything ≥3.81 works)
-- Optional: set `OBSERVABILITY_NETWORK_NAME` if you need a custom shared network name (default: `oaas-observability-net`).
-- Required: export a Discord webhook so Alertmanager can send notifications:
-
-```bash
-export DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/<id>/<token>"
-export OAAS_DISCORD_WEBHOOK_URL="${DISCORD_WEBHOOK_URL}"  # required for make kup (Kubernetes secret rendering)
-```
-
+- Or Kubernetes Cluster
 ---
 
 ## Quick Start
 
 ```bash
-# from the repo root
-make clean        # optional, ensures nothing stale is running
+### For Docker Compose
+make build        # optional, build images without cache
 make up           # creates the shared network, merges OTEL config, boots stack
+make logs         # see container logs
 make ps           # check container health/state
 
 # when you are done
 make stop         # stop containers but preserve volumes
 make down         # stop + remove containers
 make clean        # stop + remove containers and anonymous volumes
+
+### For Kubernetes
+make kup           # Start Kubernetes resources
+make kdown         # Stop Kubernetes resources
 ```
-
-The Make targets call `docker compose` under the hood, so you can still run `docker compose logs` or `docker compose ps` directly if you prefer.
-
 ---
 
 ## Service Onboarding Workflow
 
 Most backend repos only need a handful of steps to start emitting telemetry into OAAS.
 
-1. **Boot OAAS** – run `make up` in this repo so the collector/backends and the external Docker network exist.
-2. **Install Instrumentation Hub** – from your FastAPI service run one of the following:
+1. **Boot OAAS** 
+  – run `make up` or `make kup` in this repo so the collector/backends and the external Docker network exist.
+2. **Install Instrumentation Hub** – from your python service run one of the following:
 
    ```bash
    poetry add git+https://github.com/vyavasthita/instrumentation-hub.git#subdirectory=packages/python/fastapi
@@ -102,9 +97,10 @@ networks:
 ```
 
 3. Attach relevant services to that network and point their OTLP exporters to `http://otel-collector:4318/v1/{logs,traces,metrics}`.
-Because Docker DNS is shared inside the network, `otel-collector`, `loki`, `tempo`, `prometheus`, and `grafana` resolve without extra configuration.
+   
+   Because Docker DNS is shared inside the network, `otel-collector`, `loki`, `tempo`, `prometheus`, and `grafana` resolve without extra configuration.
 
-This separation lets you iterate on your application compose file independently while still reusing a single observability plane.
+   This separation lets you iterate on your application compose file independently while still reusing a single observability plane.
 
 ## Kubernetes Support
 
@@ -183,14 +179,6 @@ Each guide has been updated to reflect the observability-as-a-service model (no 
 If a service fails, inspect logs via `make logs` (streams all containers) or `docker compose logs <service>`.
 
 ---
-
-## Cleaning Up
-
-```bash
-make stop   # stop containers only
-make down   # stop + remove containers (keeps volumes)
-make clean  # stop + remove containers and anonymous volumes
-```
 
 Named volumes (`grafana_data`, `loki_data`, `loki_wal`, `tempo_data`) remain until you delete them manually with `docker volume rm`. This keeps historical telemetry intact across restarts.
 
