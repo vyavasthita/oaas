@@ -1,7 +1,6 @@
 # Exporters for OpenTelemetry Collector
 # Exporters send telemetry data to external backends.
-# Here, we configure the Loki exporter for logs.
-# Configures the Loki exporter, which sends logs to our Loki service.
+# Here, we configure the Loki, tempo, jaeger, elasticsearch etc. exporter for logs, metrics.
 exporters:
   loki:
     endpoint: http://loki:3100/loki/api/v1/push
@@ -13,14 +12,14 @@ exporters:
       insecure: true
 
   otlp:
-    endpoint: http://tempo:4317
+    endpoint: tempo:4317
     tls:
       insecure: true
 
   # Dedicated gRPC exporter for Jaeger so each traces backend has its own OTLP
   # connection but the collector can still route per-service traffic dynamically.
   otlp/jaeger:
-    endpoint: http://jaeger:4317
+    endpoint: jaeger:4317
     tls:
       insecure: true
 

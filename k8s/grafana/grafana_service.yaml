@@ -1,0 +1,32 @@
+# -----------------------------------------------------------------------------------
+# OAAS Observability: Grafana Service
+#
+# Purpose:
+#   - Exposes the Grafana web UI within the Kubernetes cluster on port 3000.
+#   - Allows other services and port-forwarding to access Grafana.
+#
+# How it works:
+#   - Selects pods with label app: grafana and exposes them via ClusterIP service.
+#   - Port 3000 is mapped to the Grafana container's port 3000.
+#   - For local access, use kubectl port-forward to map this service to localhost.
+#
+# Consumers:
+#   - Consumed by kubectl/apply and the K8s controller to create the service.
+#   - Maintainers: Update this file to change service type, ports, or selectors.
+#   - Grafana UI is accessed by users, developers, and automation via this service.
+# -----------------------------------------------------------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: oaas-observability
+  labels:
+    app: grafana
+spec:
+  selector:
+    app: grafana
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+  type: ClusterIP

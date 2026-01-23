@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opensearch-core
+  namespace: oaas-observability
+  labels:
+    app: opensearch-core
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opensearch-core
+  template:
+    metadata:
+      labels:
+        app: opensearch-core
+    spec:
+      containers:
+        - name: opensearch-core
+          image: opensearchproject/opensearch:2.11.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9200
+          env:
+            - name: discovery.type
+              value: single-node
+            - name: plugins.security.disabled
+              value: "true"
+            - name: bootstrap.memory_lock
+              value: "true"
+            - name: OPENSEARCH_JAVA_OPTS
+              value: -Xms512m -Xmx512m
+            - name: compatibility.override_main_response_version
+              value: "true"
+          readinessProbe:
+            httpGet:
+              path: /_cluster/health
+              port: 9200
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9200
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          volumeMounts:
+            - name: opensearch-data
+              mountPath: /usr/share/opensearch/data
+      volumes:
+        - name: opensearch-data
+          persistentVolumeClaim:
+            claimName: opensearch-data

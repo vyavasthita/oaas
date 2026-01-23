@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  namespace: oaas-observability
+  labels:
+    app: otel-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      containers:
+        - name: otel-collector
+          image: otel/opentelemetry-collector-contrib:0.95.0
+          imagePullPolicy: IfNotPresent
+          args: ["--config=/etc/otelcol/otel-collector-config.yaml"]
+          ports:
+            - containerPort: 4317
+            - containerPort: 4318
+            - containerPort: 8889
+          readinessProbe:
+            tcpSocket:
+              port: 4317
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          volumeMounts:
+            - name: otel-config
+              mountPath: /etc/otelcol/otel-collector-config.yaml
+              subPath: otel-collector-config.yaml
+      volumes:
+        - name: otel-config
+          configMap:
+            name: otel-collector-config

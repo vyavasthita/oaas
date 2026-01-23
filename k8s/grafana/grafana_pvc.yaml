@@ -1,0 +1,30 @@
+# -----------------------------------------------------------------------------------
+# OAAS Observability: Grafana PersistentVolumeClaim (PVC)
+#
+# Purpose:
+#   - Requests persistent storage for Grafana data (dashboards, plugins, state).
+#   - Ensures Grafana data survives pod restarts and upgrades.
+#
+# How it works:
+#   - Requests a 5Gi ReadWriteOnce PVC in the oaas-observability namespace.
+#   - Bound to a PersistentVolume by the cluster storage class.
+#   - Mounted into the Grafana pod at /var/lib/grafana.
+#
+# Consumers:
+#   - Consumed by the Grafana Deployment (see grafana_deployment.yaml) via a volume mount.
+#   - Maintainers: Update this file to change storage size or access mode.
+#   - kubectl applies this PVC to the cluster; K8s binds it to a PersistentVolume.
+# -----------------------------------------------------------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-data
+  namespace: oaas-observability
+  labels:
+    app: grafana
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
