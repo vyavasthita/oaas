@@ -25,6 +25,38 @@
 
 - Docker Desktop / Docker Engine + Compose plugin
 - Or Kubernetes Cluster
+
+### Configure `.env`
+
+All host-exposed ports, the shared network name, and Grafana credentials are configurable via the [`.env`](.env) file in the project root. Review and adjust any values to avoid port conflicts on your machine:
+
+```bash
+# Edit .env to change ports, e.g.:
+# GRAFANA_HOST_PORT=3000
+# PROMETHEUS_HOST_PORT=4091
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OBSERVABILITY_NETWORK_NAME` | `oaas-observability-net` | Shared Docker network name |
+| `GRAFANA_HOST_PORT` | `4001` | Grafana UI |
+| `GRAFANA_ADMIN_USER` | `admin` | Grafana admin username |
+| `GRAFANA_ADMIN_PASSWORD` | `admin` | Grafana admin password (change in production) |
+| `PROMETHEUS_HOST_PORT` | `4002` | Prometheus UI |
+| `ALERTMANAGER_HOST_PORT` | `4003` | Alertmanager UI |
+| `LOKI_HOST_PORT` | `4004` | Loki API |
+| `TEMPO_HOST_PORT` | `4005` | Tempo query API |
+| `JAEGER_HOST_PORT` | `4006` | Jaeger UI |
+| `OPENSEARCH_CORE_HOST_PORT` | `4007` | OpenSearch core (direct) |
+| `OPENSEARCH_PROXY_HOST_PORT` | `4008` | OpenSearch proxy (Elasticsearch-compatible) |
+| `OTEL_COLLECTOR_GRPC_HOST_PORT` | `4009` | OTEL Collector gRPC ingest |
+| `OTEL_COLLECTOR_HTTP_HOST_PORT` | `4010` | OTEL Collector HTTP ingest |
+| `OTEL_COLLECTOR_PROMETHEUS_HOST_PORT` | `4011` | OTEL Collector Prometheus exporter |
+
+For AlertManager to work set discord webhook url:
+```bash
+export DISCORD_WEBHOOK_URL=<URL>
+```
 ---
 
 ## Quick Start
@@ -86,7 +118,7 @@ The instrumentation helper installs FastAPI middleware, OTLP exporters, and the 
 
 OAAS exposes its services over an external Docker network so other repositories can connect without sharing compose files.
 
-1. `make up` (or `make network`) ensures the network exists. By default it is named `oaas-observability-net`.
+1. `make up` (or `make network`) ensures the network exists. The name is set by `OBSERVABILITY_NETWORK_NAME` in [`.env`](.env).
 2. In any other repo, declare the same network as external:
 
 ```yaml
@@ -96,15 +128,13 @@ networks:
     name: ${OBSERVABILITY_NETWORK_NAME:-oaas-observability-net}
 ```
 
+   The fallback `oaas-observability-net` in the consumer repo matches the `.env` default, so it works out of the box.
+
 3. Attach relevant services to that network and point their OTLP exporters to `http://otel-collector:4318/v1/{logs,traces,metrics}`.
    
    Because Docker DNS is shared inside the network, `otel-collector`, `loki`, `tempo`, `prometheus`, and `grafana` resolve without extra configuration.
 
    This separation lets you iterate on your application compose file independently while still reusing a single observability plane.
-
-## Kubernetes Support
-
-When you are ready to exercise the manifests in `k8s/`, run `make kup`. The target now requires `OAAS_DISCORD_WEBHOOK_URL` (or `DISCORD_WEBHOOK_URL`) to be exported. During the deploy it renders `k8s/common/common_alertmanager_secret.yaml` from `k8s/common/common_alertmanager_secret.yaml.tmpl`, base64-encodes the webhook, and applies the generated manifest. The output file is `.gitignore`d and removed again by `make kdown`, so no plaintext secrets are committed—only the template remains in Git.
 
 ---
 
@@ -122,16 +152,21 @@ Because every client sends OTLP telemetry over the shared network, the collector
 
 ## Service Endpoints
 
-| Service | URL | Notes |
-|---------|-----|-------|
-| Grafana | http://localhost:8080/ | admin / admin (change in production) |
-| Prometheus | http://localhost:9090/ | includes sample alert rule |
-| Alertmanager | http://localhost:9093/ | make sure `DISCORD_WEBHOOK_URL` is set |
-| Loki API | http://localhost:3100/ | useful for quick readiness probes |
-| OpenSearch | http://localhost:9200/ | REST API + Dev Tools console |
-| Tempo | http://localhost:3200/ | provides the Tempo query API |
-| Jaeger | http://localhost:16686/ | alternate traces UI + API for the jaeger backend |
-| OTEL Collector | Ports 4317/4318 | gRPC/HTTP OTLP ingest endpoints |
+Ports shown below are the defaults from `.env`. Adjust as needed.
+
+| Service | URL | `.env` Variable | Notes |
+|---------|-----|-----------------|-------|
+| Grafana | http://localhost:4001/ | `GRAFANA_HOST_PORT` | credentials via `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` |
+| Prometheus | http://localhost:4002/ | `PROMETHEUS_HOST_PORT` | includes sample alert rule |
+| Alertmanager | http://localhost:4003/ | `ALERTMANAGER_HOST_PORT` | make sure `DISCORD_WEBHOOK_URL` is set |
+| Loki API | http://localhost:4004/ | `LOKI_HOST_PORT` | useful for quick readiness probes |
+| Tempo | http://localhost:4005/ | `TEMPO_HOST_PORT` | provides the Tempo query API |
+| Jaeger | http://localhost:4006/ | `JAEGER_HOST_PORT` | alternate traces UI + API for the jaeger backend |
+| OpenSearch Core | http://localhost:4007/ | `OPENSEARCH_CORE_HOST_PORT` | direct access to OpenSearch |
+| OpenSearch Proxy | http://localhost:4008/ | `OPENSEARCH_PROXY_HOST_PORT` | Elasticsearch-compatible REST API |
+| OTEL Collector gRPC | localhost:4009 | `OTEL_COLLECTOR_GRPC_HOST_PORT` | gRPC OTLP ingest |
+| OTEL Collector HTTP | http://localhost:4010/ | `OTEL_COLLECTOR_HTTP_HOST_PORT` | HTTP OTLP ingest |
+| OTEL Collector Prometheus | http://localhost:4011/ | `OTEL_COLLECTOR_PROMETHEUS_HOST_PORT` | Prometheus exporter |
 
 All services live on the shared Docker network, so containers from other repos can reach them at their service names.
 
@@ -145,11 +180,12 @@ All services live on the shared Docker network, so containers from other repos c
    - `OTEL_EXPORTER_LOGS_ENDPOINT=http://otel-collector:4318/v1/logs`
    - `OTEL_EXPORTER_TRACES_ENDPOINT=http://otel-collector:4318/v1/traces`
    - `OTEL_EXPORTER_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics`
-   - `OTEL_METRICS_EXPORTER=otlp`
    - `OTEL_SERVICE_NAME=<your-service>`
+   - `LOGGING_BACKEND=loki` (or `opensearch`)
+   - `TRACING_BACKEND=tempo` (or `jaeger`)
+   - `METRICS_BACKEND=prometheus`
 4. **(Optional) Additional Prometheus scrape targets** – if you still need Prometheus to scrape a metrics endpoint directly, extend [observability/config/observability_backends/prometheus/config/prometheus.yaml](observability/config/observability_backends/prometheus/config/prometheus.yaml) with another `job_name` that points to your container on the shared network.
-5. **Pick your logging backend** by setting `LOGGING_BACKEND` in your app container environment to either `loki` (default) or `opensearch`. The instrumentation helper stamps this value onto the resource so the Collector’s routing processor can fan logs to the right exporter.
-6. **Dashboards & Alerts** – drop JSON dashboards inside [observability/config/grafana/dashboards](observability/config/grafana/dashboards) and alert rules into [observability/config/observability_backends/prometheus/config/test-alerts.yaml](observability/config/observability_backends/prometheus/config/test-alerts.yaml) (or a new file referenced from Prometheus).
+5. **Dashboards & Alerts** – drop JSON dashboards inside [observability/config/grafana/dashboards](observability/config/grafana/dashboards) and alert rules into [observability/config/observability_backends/prometheus/config/test-alerts.yaml](observability/config/observability_backends/prometheus/config/test-alerts.yaml) (or a new file referenced from Prometheus).
 
 > Each service chooses exactly one backend per signal (logs, traces, metrics). Running multiple services with
 > different combinations is fully supported because the Collector keeps every exporter active simultaneously.
@@ -171,8 +207,8 @@ Each guide has been updated to reflect the observability-as-a-service model (no 
 ## Troubleshooting & Verification
 
 1. `make ps` – confirm every container is `running (healthy)`.
-2. `curl http://localhost:3100/ready` – verifies Loki readiness.
-3. `curl http://localhost:3200/ready` – verifies Tempo readiness.
+2. `curl http://localhost:4004/ready` – verifies Loki readiness.
+3. `curl http://localhost:4005/ready` – verifies Tempo readiness.
 4. Visit Grafana and confirm Prometheus/Loki/Tempo datasources are `OK`.
 5. From another repo, send a test log/trace/metric and verify it shows up in Grafana.
 

@@ -1,13 +1,14 @@
 
+include .env
+
 NAME := Observability As a Service
 REPO_URL := https://github.com/vyavasthita/oaas
 COMPOSE_FILE ?= docker-compose.yaml
-OBSERVABILITY_NETWORK_NAME ?= oaas-observability-net
 K8S_DIR := ./k8s
 K8S_NAMESPACE := oaas-observability
 K8S_COMPONENTS := common loki opensearch-core opensearch tempo jaeger otel-collector alertmanager prometheus grafana
 K8S_COMPONENTS_DELETE := grafana prometheus alertmanager otel-collector jaeger tempo opensearch opensearch-core loki common
-GRAFANA_LOCAL_PORT ?= 8080
+GRAFANA_LOCAL_PORT := $(GRAFANA_HOST_PORT)
 PORT_FORWARD_PID_FILE := .grafana-port-forward.pid
 PORT_FORWARD_LOG := .grafana-port-forward.log
 NAMESPACE_MANIFEST := $(K8S_DIR)/common/common_namespace.yaml
