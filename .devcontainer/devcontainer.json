@@ -1,0 +1,41 @@
+// OAAS Dev Container — Observability stack workspace
+// Opens a lightweight shell connected to all observability services.
+// All 9 services (Grafana, Prometheus, Loki, Tempo, etc.) start automatically.
+{
+  "name": "OAAS",
+  "dockerComposeFile": [
+    "../docker-compose.yaml",
+    "docker-compose.devcontainer.yaml"
+  ],
+  "service": "workspace",
+  "workspaceFolder": "/workspace",
+
+  // Runs on the HOST before any container is built.
+  // Creates the shared Docker network so all repos can communicate.
+  "initializeCommand": "docker network create oaas-observability-net 2>/dev/null || true",
+
+  // Runs inside container after first creation.
+  "postCreateCommand": "echo 'OAAS workspace ready. All observability services are starting.'",
+
+  "forwardPorts": [4001, 4002, 4003, 4004, 4005, 4006, 4010],
+  "portsAttributes": {
+    "4001": { "label": "Grafana", "onAutoForward": "notify" },
+    "4002": { "label": "Prometheus", "onAutoForward": "silent" },
+    "4003": { "label": "Alertmanager", "onAutoForward": "silent" },
+    "4004": { "label": "Loki", "onAutoForward": "silent" },
+    "4005": { "label": "Tempo", "onAutoForward": "silent" },
+    "4006": { "label": "Jaeger", "onAutoForward": "silent" },
+    "4010": { "label": "OTel Collector HTTP", "onAutoForward": "silent" }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml"
+      ]
+    }
+  },
+
+  "shutdownAction": "stopCompose"
+}

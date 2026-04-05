@@ -42,10 +42,34 @@ flowchart LR
 
 ---
 
-## Prerequisites
+## Getting Started
 
-- Docker Desktop / Docker Engine + Compose
-- Configure [`.env`](.env) — all host ports, network name, and Grafana credentials live here (or keep the existing ones if you do not want to change)
+### Option A — Dev Container (Recommended)
+
+**Prerequisites:** VS Code, Docker Desktop, [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+
+1. Clone this repo
+2. Configure [`.env`](.env) (see table below)
+3. Open the folder in VS Code
+4. When prompted, click **Reopen in Container** (or run `Dev Containers: Reopen in Container` from the command palette)
+5. All 9 observability services start automatically
+6. Access Grafana at `http://localhost:4001`
+
+> No Python, Make, or other tooling needed on the host — everything runs inside containers.
+
+### Option B — Makefile
+
+**Prerequisites:** Docker Desktop / Docker Engine + Compose, Make
+
+1. Clone this repo
+2. Configure [`.env`](.env) (see table below)
+3. Run:
+   ```bash
+   make up       # creates network, merges OTel config, boots stack
+   make ps       # check health
+   ```
+
+### `.env` Configuration
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -66,9 +90,7 @@ flowchart LR
 
 For alerting: `export DISCORD_WEBHOOK_URL=<URL>`
 
----
-
-## Quick Start
+### Make Commands
 
 ```bash
 make up       # creates network, merges OTel config, boots stack
@@ -77,8 +99,8 @@ make logs     # follow logs
 make stop     # stop (preserve volumes)
 make down     # stop + remove
 make clean    # stop + remove + prune volumes
-
 ```
+
 ---
 
 ## Service Endpoints

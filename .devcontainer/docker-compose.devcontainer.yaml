@@ -1,0 +1,13 @@
+# Dev Container override for OAAS
+# Adds a lightweight workspace service so VS Code has a container to attach to.
+# All other services come from the parent docker-compose.yaml unchanged.
+
+services:
+  workspace:
+    image: mcr.microsoft.com/devcontainers/base:ubuntu
+    container_name: oaas-workspace
+    volumes:
+      - ..:/workspace:cached
+    command: sleep infinity
+    networks:
+      - observability
