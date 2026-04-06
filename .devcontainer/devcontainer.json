@@ -17,15 +17,15 @@
   // Runs inside container after first creation.
   "postCreateCommand": "echo 'OAAS workspace ready. All observability services are starting.'",
 
-  "forwardPorts": [4001, 4002, 4003, 4004, 4005, 4006, 4010],
+  "forwardPorts": [1001, 1002, 1003, 1004, 1005, 1006, 1010],
   "portsAttributes": {
-    "4001": { "label": "Grafana", "onAutoForward": "notify" },
-    "4002": { "label": "Prometheus", "onAutoForward": "silent" },
-    "4003": { "label": "Alertmanager", "onAutoForward": "silent" },
-    "4004": { "label": "Loki", "onAutoForward": "silent" },
-    "4005": { "label": "Tempo", "onAutoForward": "silent" },
-    "4006": { "label": "Jaeger", "onAutoForward": "silent" },
-    "4010": { "label": "OTel Collector HTTP", "onAutoForward": "silent" }
+    "1001": { "label": "Grafana", "onAutoForward": "notify" },
+    "1002": { "label": "Prometheus", "onAutoForward": "silent" },
+    "1003": { "label": "Alertmanager", "onAutoForward": "silent" },
+    "1004": { "label": "Loki", "onAutoForward": "silent" },
+    "1005": { "label": "Tempo", "onAutoForward": "silent" },
+    "1006": { "label": "Jaeger", "onAutoForward": "silent" },
+    "1010": { "label": "OTel Collector HTTP", "onAutoForward": "silent" }
   },
 
   "customizations": {

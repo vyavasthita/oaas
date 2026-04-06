@@ -12,9 +12,10 @@ service:
   pipelines:
     logs:
       receivers: [otlp]
-      # Logs run through batching, then both attribute processors (labels for Grafana + Loki).
+      # Logs run through batching, then both attribute processors (labels for Grafana + Loki),
+      # then resource stripping removes noisy SDK/backend attrs from the log body.
       # routing/logs must be last so it can look at logging_backend and decide which exporter to use.
-      processors: [batch, attributes/log-labels, attributes/loki, routing/logs]
+      processors: [batch, attributes/log-labels, attributes/loki, resource/strip-log-noise, routing/logs]
       exporters: [loki, elasticsearch/opensearch]
     traces:
       receivers: [otlp]

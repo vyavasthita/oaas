@@ -53,7 +53,7 @@ flowchart LR
 3. Open the folder in VS Code
 4. When prompted, click **Reopen in Container** (or run `Dev Containers: Reopen in Container` from the command palette)
 5. All 9 observability services start automatically
-6. Access Grafana at `http://localhost:4001`
+6. Access Grafana at `http://localhost:1001`
 
 > No Python, Make, or other tooling needed on the host — everything runs inside containers.
 
@@ -76,17 +76,17 @@ flowchart LR
 | `OBSERVABILITY_NETWORK_NAME` | `oaas-observability-net` | Shared Docker network |
 | `GRAFANA_ADMIN_USER` | `admin` | Grafana username |
 | `GRAFANA_ADMIN_PASSWORD` | `admin` | Grafana password |
-| `GRAFANA_HOST_PORT` | `4001` | Grafana |
-| `PROMETHEUS_HOST_PORT` | `4002` | Prometheus |
-| `ALERTMANAGER_HOST_PORT` | `4003` | Alertmanager |
-| `LOKI_HOST_PORT` | `4004` | Loki |
-| `TEMPO_HOST_PORT` | `4005` | Tempo |
-| `JAEGER_HOST_PORT` | `4006` | Jaeger |
-| `OPENSEARCH_CORE_HOST_PORT` | `4007` | OpenSearch (direct) |
-| `OPENSEARCH_PROXY_HOST_PORT` | `4008` | OpenSearch proxy |
-| `OTEL_COLLECTOR_GRPC_HOST_PORT` | `4009` | Collector gRPC |
-| `OTEL_COLLECTOR_HTTP_HOST_PORT` | `4010` | Collector HTTP |
-| `OTEL_COLLECTOR_PROMETHEUS_HOST_PORT` | `4011` | Collector Prometheus exporter |
+| `GRAFANA_HOST_PORT` | `1001` | Grafana |
+| `PROMETHEUS_HOST_PORT` | `1002` | Prometheus |
+| `ALERTMANAGER_HOST_PORT` | `1003` | Alertmanager |
+| `LOKI_HOST_PORT` | `1004` | Loki |
+| `TEMPO_HOST_PORT` | `1005` | Tempo |
+| `JAEGER_HOST_PORT` | `1006` | Jaeger |
+| `OPENSEARCH_CORE_HOST_PORT` | `1007` | OpenSearch (direct) |
+| `OPENSEARCH_PROXY_HOST_PORT` | `1008` | OpenSearch proxy |
+| `OTEL_COLLECTOR_GRPC_HOST_PORT` | `1009` | Collector gRPC |
+| `OTEL_COLLECTOR_HTTP_HOST_PORT` | `1010` | Collector HTTP |
+| `OTEL_COLLECTOR_PROMETHEUS_HOST_PORT` | `1011` | Collector Prometheus exporter |
 
 For alerting: `export DISCORD_WEBHOOK_URL=<URL>`
 
@@ -107,14 +107,14 @@ make clean    # stop + remove + prune volumes
 
 | Service | URL | Variable |
 |---------|-----|----------|
-| Grafana | http://localhost:4001 | `GRAFANA_HOST_PORT` |
-| Prometheus | http://localhost:4002 | `PROMETHEUS_HOST_PORT` |
-| Alertmanager | http://localhost:4003 | `ALERTMANAGER_HOST_PORT` |
-| Loki | http://localhost:4004 | `LOKI_HOST_PORT` |
-| Tempo | http://localhost:4005 | `TEMPO_HOST_PORT` |
-| Jaeger | http://localhost:4006 | `JAEGER_HOST_PORT` |
-| OpenSearch | http://localhost:4008 | `OPENSEARCH_PROXY_HOST_PORT` |
-| OTel Collector (HTTP) | http://localhost:4010 | `OTEL_COLLECTOR_HTTP_HOST_PORT` |
+| Grafana | http://localhost:1001 | `GRAFANA_HOST_PORT` |
+| Prometheus | http://localhost:1002 | `PROMETHEUS_HOST_PORT` |
+| Alertmanager | http://localhost:1003 | `ALERTMANAGER_HOST_PORT` |
+| Loki | http://localhost:1004 | `LOKI_HOST_PORT` |
+| Tempo | http://localhost:1005 | `TEMPO_HOST_PORT` |
+| Jaeger | http://localhost:1006 | `JAEGER_HOST_PORT` |
+| OpenSearch | http://localhost:1008 | `OPENSEARCH_PROXY_HOST_PORT` |
+| OTel Collector (HTTP) | http://localhost:1010 | `OTEL_COLLECTOR_HTTP_HOST_PORT` |
 
 ---
 
@@ -180,8 +180,8 @@ make clean    # stop + remove + prune volumes
 
 ```bash
 make ps                              # check container health
-curl http://localhost:4004/ready     # Loki readiness
-curl http://localhost:4005/ready     # Tempo readiness
+curl http://localhost:1004/ready     # Loki readiness
+curl http://localhost:1005/ready     # Tempo readiness
 make logs                            # stream all logs
 ```
 

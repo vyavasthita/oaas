@@ -40,6 +40,22 @@ processors:
           action: insert
           from_attribute: "container.name"
 
+  # Strip noisy resource attributes from logs before they reach the Loki exporter.
+  # logging_backend and service.name are kept — routing and Loki labels need them.
+  # Runs only in the logs pipeline so traces/metrics resources are untouched.
+  resource/strip-log-noise:
+    attributes:
+      - key: telemetry.sdk.language
+        action: delete
+      - key: telemetry.sdk.name
+        action: delete
+      - key: telemetry.sdk.version
+        action: delete
+      - key: metrics_backend
+        action: delete
+      - key: tracing_backend
+        action: delete
+
   # Routing processors read per-signal backend hints from the resource attributes supplied by
   # instrumentation-hub-fastapi (logging_backend / tracing_backend / metrics_backend). They MUST
   # be declared last because any processors listed after these would never see data.
