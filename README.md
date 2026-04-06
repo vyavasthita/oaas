@@ -1,75 +1,65 @@
-# Observability as a Service (OAAS)
+# Observability As A Service (OAAS)
 
-- Standalone observability stack that any backend can reuse over a shared Docker network.
-- Services push OTLP telemetry via [Instrumentation Hub](https://github.com/vyavasthita/instrumentation-hub)
-- OAAS handles storage, routing, and visualization.
+A **plug-and-play observability platform** 
+- Any backend service gets logs, traces, metrics, dashboards, and alerting without running its own infrastructure.
+
+### Why OAAS?
+
+- **Zero observability code in your services.** Services connect to a shared Docker network and push OTLP — OAAS handles collection, storage, routing, and visualization.
+- **Fully decoupled.** Your service knows nothing about Loki, Tempo, Prometheus, or Grafana. Swap backends (e.g. Loki → OpenSearch) without changing a single line in any consumer.
+- **Per-service backend routing.** Each service declares its preferred backend via env vars (`LOGGING_BACKEND=loki`). The OTel Collector routes signals automatically — no config changes in OAAS.
+- **One `docker compose up` away.** 9 production-grade components start together with health checks, persistent volumes, and pre-provisioned Grafana dashboards.
+- **Reusable across any number of services.** Any microservice — each service share the same stack with full tenant isolation via `service.name`.
+
+```mermaid
+flowchart TB
+    subgraph Consumer Services
+        A[Auth Service] -->|OTLP| Net((Shared Docker Network))
+        B[Product Service] -->|OTLP| Net
+        C[Any Future Service] -->|OTLP| Net
+    end
+
+    Net --> Collector[OTel Collector]
+
+    subgraph OAAS Stack
+        Collector -->|logs| Loki
+        Collector -->|logs| OpenSearch
+        Collector -->|traces| Tempo
+        Collector -->|traces| Jaeger
+        Collector -->|metrics| Prometheus
+        Prometheus --> Alertmanager --> Discord
+        Loki --> Grafana
+        Tempo --> Grafana
+        Prometheus --> Grafana
+    end
+```
+
+> Services add observability with just env vars and a shared network — **no SDKs, no config files, no infrastructure to manage.**
 
 **Example consumer:** [Auth Service](https://github.com/vyavasthita/auth-service)
 
 ---
 
-## Architecture
-
-```mermaid
-flowchart LR
-    subgraph Your Service
-        App((FastAPI App)) -->|instrumentation-hub| OTLP[OTLP Exporters]
-    end
-    OTLP -->|logs/traces/metrics| Collector[OTel Collector]
-    Collector --> Loki
-    Collector --> Tempo
-    Collector --> Prometheus
-    Prometheus --> Alertmanager --> Discord
-    Loki --> Grafana
-    Tempo --> Grafana
-    Prometheus --> Grafana
-```
-
----
-
 ## Stack
 
-| Component | Version | Purpose |
-|-----------|---------|---------|
-| OTel Collector | 0.95.0 | OTLP ingest + routing |
-| Loki | 2.9.4 | Log storage |
-| OpenSearch | 2.11.0 | Full-text log search |
-| Tempo | 2.5.0 | Trace storage |
-| Jaeger | 1.57 | Alternate trace UI |
-| Prometheus | 2.49.1 | Metrics + alerting rules |
-| Alertmanager | 0.27.0 | Alert routing (Discord) |
-| Grafana | 10.4.2 | Unified dashboards |
+| Component | Purpose |
+|-----------|---------|
+| OTel Collector | OTLP ingest + routing |
+| Loki | Log storage |
+| OpenSearch | Full-text log search |
+| Tempo | Trace storage |
+| Jaeger | Alternate trace UI |
+| Prometheus | Metrics + alerting rules |
+| Alertmanager | Alert routing (Discord) |
+| Grafana | Unified dashboards |
 
 ---
 
 ## Getting Started
 
-### Option A — Dev Container (Recommended)
-
-**Prerequisites:** VS Code, Docker Desktop, [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
-
-1. Clone this repo
-2. Configure [`.env`](.env) (see table below)
-3. Open the folder in VS Code
-4. When prompted, click **Reopen in Container** (or run `Dev Containers: Reopen in Container` from the command palette)
-5. All 9 observability services start automatically
-6. Access Grafana at `http://localhost:1001`
-
-> No Python, Make, or other tooling needed on the host — everything runs inside containers.
-
-### Option B — Makefile
-
-**Prerequisites:** Docker Desktop / Docker Engine + Compose, Make
-
-1. Clone this repo
-2. Configure [`.env`](.env) (see table below)
-3. Run:
-   ```bash
-   make up       # creates network, merges OTel config, boots stack
-   make ps       # check health
-   ```
-
 ### `.env` Configuration
+
+Configure .env
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -89,6 +79,31 @@ flowchart LR
 | `OTEL_COLLECTOR_PROMETHEUS_HOST_PORT` | `1011` | Collector Prometheus exporter |
 
 For alerting: `export DISCORD_WEBHOOK_URL=<URL>`
+
+### Option A — Dev Container (Recommended)
+
+**Prerequisites:** VS Code, Docker Desktop, [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+
+1. Clone this repo
+2. Open the folder in VS Code
+3. When prompted, click **Reopen in Container** (or run `Dev Containers: Reopen in Container` from the command palette)
+4. All observability services start automatically
+5. Access Grafana at `http://localhost:<GRAFANA_HOST_PORT>`
+
+> No Python, Make, or other tooling needed on the host — everything runs inside containers.
+
+### Option B — Makefile
+
+**Prerequisites:** Docker Desktop / Docker Engine + Compose, Make
+
+1. Clone this repo
+2. Run:
+   ```bash
+   make up       # creates network, merges OTel config, boots stack
+   make ps       # check health
+   ```
+
+
 
 ### Make Commands
 
@@ -129,7 +144,7 @@ make clean    # stop + remove + prune volumes
    ```
    `OBSERVABILITY_NETWORK_NAME` in your `.env` must match the value in OAAS `.env`.
 
-2. **Set env vars** in your service container:
+2. **Set env vars** in your service container. Port `4318` is the OTel Collector's container-internal HTTP port (`OTEL_COLLECTOR_HTTP_HOST_PORT` in [`.env`](.env) controls the host-side mapping):
    ```yaml
    OTEL_EXPORTER_LOGS_ENDPOINT: http://otel-collector:4318/v1/logs
    OTEL_EXPORTER_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
@@ -171,8 +186,9 @@ make clean    # stop + remove + prune volumes
 
 | Repository | Purpose |
 |------------|---------|
-| [Instrumentation Hub](https://github.com/vyavasthita/instrumentation-hub) | Client library for instrumenting FastAPI services |
-| [Auth Service](https://github.com/vyavasthita/auth-service) | Example consumer — JWT auth service with full OAAS integration |
+| [Instrumentation Hub](https://github.com/vyavasthita/instrumentation-hub) | Client library — instruments FastAPI services with a single function call |
+| [Auth Service](https://github.com/vyavasthita/auth-service) | Example consumer — JWT auth + RBAC with full OAAS integration |
+| [Micro-mart](https://github.com/vyavasthita/micro-mart) | Example consumer — e-commerce microservices with full OAAS integration |
 
 ---
 
