@@ -1,5 +1,12 @@
 # Observability As A Service (OAAS)
 
+<p align="left">
+  <img src="https://img.shields.io/badge/stack-Grafana%20%7C%20Loki%20%7C%20Tempo%20%7C%20Prometheus-orange" alt="Grafana Stack" />
+  <img src="https://img.shields.io/badge/collector-OpenTelemetry-blueviolet" alt="OpenTelemetry" />
+  <img src="https://img.shields.io/badge/deploy-Docker%20Compose-2496ED" alt="Docker Compose" />
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" />
+</p>
+
 A **plug-and-play observability platform** 
 - Any backend service gets logs, traces, metrics, dashboards, and alerting without running its own infrastructure.
 
@@ -37,6 +44,18 @@ flowchart TB
 > Services add observability with just env vars and a shared network — **no SDKs, no config files, no infrastructure to manage.**
 
 **Example consumer:** [Auth Service](https://github.com/vyavasthita/auth-service)
+
+---
+
+## Skills Demonstrated
+
+- **Platform-as-a-product design** — 9 production-grade components (OTel Collector, Grafana, Loki, Tempo, Prometheus, Alertmanager, Jaeger, OpenSearch) are composed into a single `docker compose up` that any service can adopt with zero code changes.
+- **Environment-based backend routing** — services declare `LOGGING_BACKEND=loki` or `opensearch` as an env var; the OTel Collector’s routing processor dispatches logs/traces/metrics to the correct backend without touching OAAS config.
+- **Decoupled architecture** — consumer services push standard OTLP and know nothing about Grafana, Loki, or Prometheus. Swapping backends (e.g. Loki → OpenSearch) requires zero changes in any consumer.
+- **Pre-provisioned Grafana** — dashboards, datasources, and alert rules are provisioned automatically via ConfigMaps, making the stack production-ready out of the box.
+- **Alerting pipeline** — Prometheus → Alertmanager → Discord webhook; alert rules and routing are templated and environment-driven.
+- **Shared Docker network isolation** — consumer services join an external Docker network; OAAS provides full tenant isolation via `service.name` without any multi-tenancy code.
+- **OTel Collector configuration merging** — a custom shell script merges per-backend YAML fragments into a single collector config, keeping each backend’s config modular and independently testable.
 
 ---
 
@@ -188,7 +207,7 @@ make clean    # stop + remove + prune volumes
 |------------|---------|
 | [Instrumentation Hub](https://github.com/vyavasthita/instrumentation-hub) | Client library — instruments FastAPI services with a single function call |
 | [Auth Service](https://github.com/vyavasthita/auth-service) | Example consumer — JWT auth + RBAC with full OAAS integration |
-| [Micro-mart](https://github.com/vyavasthita/micro-mart) | Example consumer — e-commerce microservices with full OAAS integration |
+| [Micro-Cart](https://github.com/vyavasthita/micro-cart) | Example consumer — e-commerce microservices with full OAAS integration |
 
 ---
 
@@ -205,4 +224,4 @@ make logs                            # stream all logs
 
 ## License
 
-Copyright © 2026 Dilip Kumar Sharma. All rights reserved.
+[MIT](LICENSE) — Copyright © 2026 Dilip Kumar Sharma.
